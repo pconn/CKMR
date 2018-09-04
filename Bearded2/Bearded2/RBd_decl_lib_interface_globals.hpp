@@ -1,0 +1,2 @@
+DECL_TYPE_TAG(DBearded2)
+

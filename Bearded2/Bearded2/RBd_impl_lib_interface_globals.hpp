@@ -1,0 +1,2 @@
+IMPL_TYPE_TAG(RIBearded2)
+

@@ -1,0 +1,12 @@
+arg_first_y, 
+arg_first_y_sample, 
+arg_last_y, 
+arg_n_par, 
+arg_n_samp, 
+arg_n_POP, 
+arg_amat, 
+arg_tcap, 
+arg_a, 
+arg_sex, 
+arg_isamp_POP, 
+arg_jsamp_POP

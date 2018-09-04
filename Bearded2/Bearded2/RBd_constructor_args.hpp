@@ -1,0 +1,12 @@
+int arg_first_y,
+int arg_first_y_sample,
+int arg_last_y,
+int arg_n_par,
+int arg_n_samp,
+int arg_n_POP,
+int arg_amat,
+const ARRAY_1I arg_tcap,
+const ARRAY_1I arg_a,
+const ARRAY_1I arg_sex,
+const ARRAY_1I arg_isamp_POP,
+const ARRAY_1I arg_jsamp_POP

@@ -1,0 +1,11 @@
+roi = QNaN;
+N0_f = QNaN;
+N0_m = QNaN;
+nextpari = 0xFEFEFEFE;
+first_y = arg_first_y;
+first_y_sample = arg_first_y_sample;
+last_y = arg_last_y;
+n_par = arg_n_par;
+n_samp = arg_n_samp;
+n_POP = arg_n_POP;
+amat = arg_amat;
