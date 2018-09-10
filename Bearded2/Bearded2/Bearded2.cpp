@@ -46,7 +46,7 @@ Bearded2::Bearded2(
 
 void Bearded2::make_data_summaries()
 {
-  int i_samp, j_samp, this_by, this_oby, this_capt, this_pby,this_maty,this_sex,i_POP;
+  int i_samp, j_samp, this_by, this_oby, this_capt, this_pby,this_maty,this_sex,i_POP,i_HS;
   
    // compute birth years for each sampled animal
   for( i_samp = 1; i_samp <= n_samp; i_samp++) {
@@ -68,6 +68,8 @@ void Bearded2::make_data_summaries()
 
   for (i_samp = 1; i_samp < n_samp;i_samp++) {
     for( j_samp = i_samp+1; j_samp<=n_samp; j_samp++){
+
+        ///////   PARENT OFFSPRING /////
 		// In this case, exclude comps where adult caught in year of juve birth...
 		// depends on biol & sampling
 		// First case: i is P, j is O
@@ -92,6 +94,16 @@ void Bearded2::make_data_summaries()
 		// exclude born-in-year-of-cap - this will also remove case where offspring born <= year 1
 		if ((this_oby >= this_maty) && (this_maty <= last_y) && (this_oby<this_capt) && (this_oby != this_capt)) {
 			n_comps_ytbsm[this_pby][this_capt][this_oby][this_sex][0] += 1;
+		}
+
+		////    HALF SIB   /////
+		if (by[i_samp] != by[j_samp]) {   //don't make comparison of individuals caught in same year
+			if (by[i_samp] < by[j_samp]){
+				n_hs_comps_yy[by[i_samp]][by[j_samp]] += 1;
+			}
+			else {
+				n_hs_comps_yy[by[j_samp]][by[i_samp]] += 1;
+			}
 		}
 	} // jsamp
   } // isamp
@@ -127,6 +139,22 @@ void Bearded2::make_data_summaries()
 	}
   } // i_POP
 
+  for (i_HS = 1; i_HS < n_HS; i_HS++) {
+	  i_samp = isamp_HS[i_HS];
+	  j_samp = jsamp_HS[i_HS];
+
+	  if (by[i_samp] != by[j_samp]) {
+		  if (by[i_samp] < by[j_samp]) {
+			  n_hs_match_yys[by[i_samp]][by[j_samp]][sex_HS[i_HS]] += 1;
+			  n_hs_comps_yy[by[i_samp]][by[j_samp]] -= 1;
+		  }
+		  else {
+			  n_hs_match_yys[by[j_samp]][by[i_samp]][sex_HS[i_HS]] += 1;
+			  n_hs_comps_yy[by[j_samp]][by[i_samp]] -= 1;
+		  }
+	  }
+  } // i_HS
+
   // ... NB I don't mind using if's in the constructor, since it's only run once
   // ... in lglk code, one_if() is faster
 
@@ -150,6 +178,10 @@ void Bearded2::unpack(
   roi = exp( next_param());
   N0_f = exp( next_param());
   N0_m = exp(next_param());
+  surv = 1.0 / (1.0 + exp(-next_param()));
+  //b_mort = exp(next_param());
+  //c_mort = exp(next_param());
+  //d_mort = exp(next_param());
 
   // Hide the next bit from  ADT; for one thing, strings aren't understood...
   // but there never any reason to AD this, so don't
@@ -176,7 +208,8 @@ double Bearded2::next_param() {
 void Bearded2::populate(
   int dummy
 ){
-  int y,isex;
+  int y,isex,i,j,iage;
+  
 
   N_ys[first_y][0] = N0_f;
   N_ys[first_y][1] = N0_m;
@@ -190,9 +223,25 @@ void Bearded2::populate(
   // could also do in calc_probs. Actually we just need the inverse
   for( y = first_y; y <= last_y; y++){
 	  for (isex = 0; isex <= 1; isex++) {
-		  inv_totfec_ys[y][isex] = 1.0 / N_ys[y][isex];
+		  inv_totfec_ys[y][isex] = 1.0 / (surv * N_ys[y][isex]);
 	  } //isex
   }  //y
+
+  zero(S_yij);
+  // Fill survival matrix
+  for (i = first_y; i <= last_y; i++) {
+	  for (j = i+1; j <= last_y; j++) {  //implies no matches if half sibs born in same year
+		  iage = j - i;
+		  for (y = first_y; y <= last_y; y++) {
+			  //S_yij[y][i][j] = exp(-pow(b_mort*iage, c_mort) - pow(b_mort*iage, 1.0 / c_mort) - d_mort * iage); //could be more efficient if just defined as a vector and filled here
+			  S_yij[y][i][j] = pow(surv, iage);
+		  }
+	  }
+  }
+
+
+
+
 } // populate
 
 // ---------------------------------------------------------------------------
@@ -201,22 +250,34 @@ void Bearded2::populate(
 void Bearded2::calc_probs(
   int dummy
 ){
-  int pby, pdy, pcapt, pmaty, isex, oby;
+	int pby, pdy, pcapt, pmaty, isex, oby, oby2;
   ////
 
   zero( Pr_PO_ytbs);
 
   for( pby = first_y; pby <= last_y; pby++){
+	pmaty = pby + amat;
 	for (pcapt = first_y_sample; pcapt <= last_y; pcapt++) {
       for( oby = first_y; oby <= last_y; oby++){
 		  for (isex = 0; isex <= 1; isex++) {
-			  pmaty = pby + amat;
 			  Pr_PO_ytbs[pby][pcapt][oby][isex] =
 				  one_if(pmaty <= oby) * one_if(pcapt > oby) * one_if((pcapt-pby) <= 38)*one_if((pby - oby) <= 38) * inv_totfec_ys[oby][isex];
 		  } //isex
       } // oby
     } // pcapt
   } // pmaty
+
+  zero(Pr_HS_ybbs);
+  for(isex = 0; isex <=1; isex++){
+	  for (pby = first_y; pby <= last_y; pby++) {
+		  pmaty = pby + amat;
+		  for (oby = first_y; oby <= last_y; oby++) {
+			  for (oby2 = oby+1; oby2 <= last_y; oby2++) {
+				  Pr_HS_ybbs[pby][oby][oby2][isex] = one_if(pmaty <= oby)* inv_totfec_ys[oby2][isex] * S_yij[pby][oby][oby2];
+			  }
+		  }
+	  }
+  }
 } // calc_probs
 
 // ----------------------------------------------------------------------------
@@ -225,7 +286,7 @@ void Bearded2::calc_probs(
 double Bearded2::lglk(
   const ARRAY_1D pars/* n_par */
 ){
-  int pby, pcapt, oby, isex;
+  int pby, pcapt, isex,oby,oby2,tmp_pby;
   double tot_lglk;
   ////
 
@@ -235,51 +296,41 @@ double Bearded2::lglk(
 
   tot_lglk = 0;
 
+  //////  PO Pairs  ////// 
+  for (isex = 0; isex <= 1; isex++) {
+      for (pby = first_y; pby <= last_y; pby++) {
+	      for (pcapt = first_y; pcapt <= last_y; pcapt++) {
+		      for (oby = first_y; oby <= last_y; oby++) {  
+				  tot_lglk += n_log_p(n_comps_ytbsm[pby][pcapt][oby][isex][0],1.0 - Pr_PO_ytbs[pby][pcapt][oby][isex])+ 
+					  n_log_p(n_comps_ytbsm[pby][pcapt][oby][isex][1],Pr_PO_ytbs[pby][pcapt][oby][isex]);
+			  } //oby
+		  } // pcapt
+	  } // pmaty
+  } // isex
 
-  for (pby = first_y; pby <= last_y; pby++) {
-	  for (pcapt = first_y; pcapt <= last_y; pcapt++) {
-		  for (oby = first_y; oby <= last_y; oby++) {  
-			  for (isex = 0; isex <= 1; isex++) {
-				  // Poisson approximation: fine if N is fairly big
-				  /*
-				  tot_lglk +=
-					-n_comps_ytb[pmaty][pcapt][oby] *
-					Pr_PO_ytb[pmaty][pcapt][oby]
-					+ n_log_p(
-						n_PO_ytb[pmaty][pcapt][oby],
-						n_comps_ytb[pmaty][pcapt][oby] *
-						Pr_PO_ytb[pmaty][pcapt][oby]
-					);
-				  */
-				  tot_lglk += n_log_p(n_comps_ytbsm[pby][pcapt][oby][isex][0],
-					  1 - Pr_PO_ytbs[pby][pcapt][oby][isex]);
-			  } //isex
-		  } // oby
-	  } // pcapt
-  } // pmaty
 
-  for (pby = first_y; pby <= last_y; pby++) {
-	  for (pcapt = first_y; pcapt <= last_y; pcapt++) {
-		  for (oby = first_y; oby <= last_y; oby++) {  
-			  for(isex = 0; isex <= 1; isex++){
-			    tot_lglk += n_log_p( n_comps_ytbsm[ pby][ pcapt][ oby][isex][1],
-			        Pr_PO_ytbs[ pby][ pcapt][ oby][isex]);
-			  } // isex
-		  } // oby
-	  } // pcapt
-  } // pmaty
-  // Binomial version could be:
-  // tot_lglk += n_log_p( n_PO_ytb[ pmaty][ pcapt][ oby],
-  //      Pr_PO_ytb[ pmaty][ pcapt][ oby]) +
-  //    n_log_p( n_comps_ytb[ pmaty][ pcapt][ oby] - n_PO_ytb[ pmaty][ pcapt][ oby],
-  //      1-Pr_PO_ytb[ pmaty][ pcapt][ oby]);
+  //////   Half Sibs  //////
+
+  for (isex = 0; isex <= 1; isex++) {
+	  //for (pby = first_y; pby <= last_y; pby++) {  //we'll skip parent birth year since we'll be assuming constant survival of matures for now 
+		  //pmaty = pby + amat;
+		  for (oby = first_y+8 ; oby <= last_y; oby++) {  //we need to give a parents birth year such that they will be mature 
+			  tmp_pby = oby - 7;  
+			  for (oby2 = oby + 1; oby2 <= last_y; oby2++) {
+				  tot_lglk += n_log_p(n_hs_comps_yy[oby][oby2], 1.0 - Pr_HS_ybbs[tmp_pby][oby][oby2][isex]) +
+					  n_log_p(n_hs_match_yys[oby][oby2][isex], Pr_HS_ybbs[tmp_pby][oby][oby2][isex]);
+			  }  
+		  }
+	  //}
+  }
+
 
   // Bin version *without* n_log_p needs if-statements to avoid log(0)
   // and should use log1p( -Pr_PO_ytb[ pmaty][ pcapt][ oby])
   // otherwise you can get rounding problems when N is large.
   // You have been warned !
 
-  if (tot_lglk != tot_lglk) {
+  if (tot_lglk != tot_lglk) {  //for debugging to see what's going on w/ tot_lglk=NA 
 	  isex = 2;
   }
 return( tot_lglk);

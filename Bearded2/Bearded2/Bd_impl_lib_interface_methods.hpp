@@ -190,6 +190,34 @@ SEXP DBearded2::_set_nt_inv_totfec_ysb1_pars(SEXP arg_inv_totfec_ysb1_pars, SEXP
   return (Result);
 }
 
+SEXP DBearded2::_get_isamp_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)isamp_HS, "isamp_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_isamp_HS(SEXP arg_isamp_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)isamp_HS, "isamp_HS", arg_isamp_HS, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_isamp_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)isamp_HS, "isamp_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_isamp_HS(SEXP arg_isamp_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)isamp_HS, "isamp_HS", arg_isamp_HS, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
 SEXP DBearded2::_get_isamp_POP(SEXP sArgList) const
 {
   SEXP Result = R_ImplGetter(MemAllocator, false, (char*)isamp_POP, "isamp_POP", sArgList, __FILE__, __LINE__);
@@ -214,6 +242,34 @@ SEXP DBearded2::_get_nt_isamp_POP(SEXP sArgList) const
 SEXP DBearded2::_set_nt_isamp_POP(SEXP arg_isamp_POP, SEXP sArgList)
 {
   SEXP Result = R_ImplSetter(MemAllocator, true, (char*)isamp_POP, "isamp_POP", arg_isamp_POP, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_jsamp_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)jsamp_HS, "jsamp_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_jsamp_HS(SEXP arg_jsamp_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)jsamp_HS, "jsamp_HS", arg_jsamp_HS, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_jsamp_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)jsamp_HS, "jsamp_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_jsamp_HS(SEXP arg_jsamp_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)jsamp_HS, "jsamp_HS", arg_jsamp_HS, sArgList, __FILE__, __LINE__);
   
   return (Result);
 }
@@ -270,7 +326,7 @@ SEXP DBearded2::R_internal_lglk(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars);
+    Plan_7.create(MemAllocator, arg_pars);
     
     AdtArrayPlanActor::R_to_ADlib(MemAllocator, (char*)REAL(pars), (char*)arg_pars);
     
@@ -279,7 +335,7 @@ SEXP DBearded2::R_internal_lglk(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars, (void*)REAL(pars));
+    Plan_7.create(MemAllocator, arg_pars, (void*)REAL(pars));
     
   }
   
@@ -321,13 +377,13 @@ SEXP DBearded2::R_internal_LGLK_BPARS(SEXP pars, SEXP parsb1_pars, SEXP lglkb1_p
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars);
+    Plan_7.create(MemAllocator, arg_pars);
     
     AdtArrayPlanActor::R_to_ADlib(MemAllocator, (char*)REAL(pars), (char*)arg_pars);
     
     arg_parsb1_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_parsb1_pars);
+    Plan_7.create(MemAllocator, arg_parsb1_pars);
     
     AdtArrayPlanActor::R_to_ADlib(MemAllocator, (char*)REAL(parsb1_pars), (char*)arg_parsb1_pars);
     
@@ -337,11 +393,11 @@ SEXP DBearded2::R_internal_LGLK_BPARS(SEXP pars, SEXP parsb1_pars, SEXP lglkb1_p
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars, (void*)REAL(pars));
+    Plan_7.create(MemAllocator, arg_pars, (void*)REAL(pars));
     
     arg_parsb1_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_parsb1_pars, (void*)REAL(parsb1_pars));
+    Plan_7.create(MemAllocator, arg_parsb1_pars, (void*)REAL(parsb1_pars));
     
     arg_lglkb1_pars = REAL(lglkb1_pars)[0];
   }
@@ -489,6 +545,76 @@ SEXP DBearded2::_get_nt_n_comps_ytbsm(SEXP sArgList) const
 SEXP DBearded2::_set_nt_n_comps_ytbsm(SEXP arg_n_comps_ytbsm, SEXP sArgList)
 {
   SEXP Result = R_ImplSetter(MemAllocator, true, (char*)n_comps_ytbsm, "n_comps_ytbsm", arg_n_comps_ytbsm, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_n_HS() const
+{
+  return (R_Scalar(n_HS));
+}
+
+SEXP DBearded2::_set_n_HS(SEXP arg_n_HS)
+{
+  R_CheckArgument("arg_n_HS", "INTSXP", INTSXP, arg_n_HS, __FILE__, __LINE__);
+  
+  n_HS = INTEGER(arg_n_HS)[0];
+  
+  return (R_Empty());
+}
+
+SEXP DBearded2::_get_n_hs_comps_yy(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)n_hs_comps_yy, "n_hs_comps_yy", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_n_hs_comps_yy(SEXP arg_n_hs_comps_yy, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)n_hs_comps_yy, "n_hs_comps_yy", arg_n_hs_comps_yy, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_n_hs_comps_yy(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)n_hs_comps_yy, "n_hs_comps_yy", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_n_hs_comps_yy(SEXP arg_n_hs_comps_yy, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)n_hs_comps_yy, "n_hs_comps_yy", arg_n_hs_comps_yy, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_n_hs_match_yys(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)n_hs_match_yys, "n_hs_match_yys", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_n_hs_match_yys(SEXP arg_n_hs_match_yys, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)n_hs_match_yys, "n_hs_match_yys", arg_n_hs_match_yys, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_n_hs_match_yys(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)n_hs_match_yys, "n_hs_match_yys", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_n_hs_match_yys(SEXP arg_n_hs_match_yys, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)n_hs_match_yys, "n_hs_match_yys", arg_n_hs_match_yys, sArgList, __FILE__, __LINE__);
   
   return (Result);
 }
@@ -671,6 +797,90 @@ SEXP DBearded2::R_nt_populate(SEXP dummy)
   return (R_internal_populate(dummy, false));
 }
 
+SEXP DBearded2::_get_Pr_HS_bbs(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)Pr_HS_bbs, "Pr_HS_bbs", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_Pr_HS_bbs(SEXP arg_Pr_HS_bbs, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)Pr_HS_bbs, "Pr_HS_bbs", arg_Pr_HS_bbs, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_Pr_HS_bbs(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)Pr_HS_bbs, "Pr_HS_bbs", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_Pr_HS_bbs(SEXP arg_Pr_HS_bbs, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)Pr_HS_bbs, "Pr_HS_bbs", arg_Pr_HS_bbs, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_Pr_HS_ybbs(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)Pr_HS_ybbs, "Pr_HS_ybbs", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_Pr_HS_ybbs(SEXP arg_Pr_HS_ybbs, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)Pr_HS_ybbs, "Pr_HS_ybbs", arg_Pr_HS_ybbs, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_Pr_HS_ybbs(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)Pr_HS_ybbs, "Pr_HS_ybbs", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_Pr_HS_ybbs(SEXP arg_Pr_HS_ybbs, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)Pr_HS_ybbs, "Pr_HS_ybbs", arg_Pr_HS_ybbs, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_pr_hs_ybbsb1_pars(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)pr_hs_ybbsb1_pars, "pr_hs_ybbsb1_pars", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_pr_hs_ybbsb1_pars(SEXP arg_pr_hs_ybbsb1_pars, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)pr_hs_ybbsb1_pars, "pr_hs_ybbsb1_pars", arg_pr_hs_ybbsb1_pars, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_pr_hs_ybbsb1_pars(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)pr_hs_ybbsb1_pars, "pr_hs_ybbsb1_pars", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_pr_hs_ybbsb1_pars(SEXP arg_pr_hs_ybbsb1_pars, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)pr_hs_ybbsb1_pars, "pr_hs_ybbsb1_pars", arg_pr_hs_ybbsb1_pars, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
 SEXP DBearded2::_get_Pr_PO_ytbs(SEXP sArgList) const
 {
   SEXP Result = R_ImplGetter(MemAllocator, false, (char*)Pr_PO_ytbs, "Pr_PO_ytbs", sArgList, __FILE__, __LINE__);
@@ -755,6 +965,62 @@ SEXP DBearded2::_set_roib1_pars(SEXP arg_roib1_pars)
   return (R_Empty());
 }
 
+SEXP DBearded2::_get_S_yij(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)S_yij, "S_yij", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_S_yij(SEXP arg_S_yij, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)S_yij, "S_yij", arg_S_yij, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_S_yij(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)S_yij, "S_yij", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_S_yij(SEXP arg_S_yij, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)S_yij, "S_yij", arg_S_yij, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_s_yijb1_pars(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)s_yijb1_pars, "s_yijb1_pars", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_s_yijb1_pars(SEXP arg_s_yijb1_pars, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)s_yijb1_pars, "s_yijb1_pars", arg_s_yijb1_pars, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_s_yijb1_pars(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)s_yijb1_pars, "s_yijb1_pars", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_s_yijb1_pars(SEXP arg_s_yijb1_pars, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)s_yijb1_pars, "s_yijb1_pars", arg_s_yijb1_pars, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
 SEXP DBearded2::_get_sex(SEXP sArgList) const
 {
   SEXP Result = R_ImplGetter(MemAllocator, false, (char*)sex, "sex", sArgList, __FILE__, __LINE__);
@@ -779,6 +1045,34 @@ SEXP DBearded2::_get_nt_sex(SEXP sArgList) const
 SEXP DBearded2::_set_nt_sex(SEXP arg_sex, SEXP sArgList)
 {
   SEXP Result = R_ImplSetter(MemAllocator, true, (char*)sex, "sex", arg_sex, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_sex_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, false, (char*)sex_HS, "sex_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_sex_HS(SEXP arg_sex_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, false, (char*)sex_HS, "sex_HS", arg_sex_HS, sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_get_nt_sex_HS(SEXP sArgList) const
+{
+  SEXP Result = R_ImplGetter(MemAllocator, true, (char*)sex_HS, "sex_HS", sArgList, __FILE__, __LINE__);
+  
+  return (Result);
+}
+
+SEXP DBearded2::_set_nt_sex_HS(SEXP arg_sex_HS, SEXP sArgList)
+{
+  SEXP Result = R_ImplSetter(MemAllocator, true, (char*)sex_HS, "sex_HS", arg_sex_HS, sArgList, __FILE__, __LINE__);
   
   return (Result);
 }
@@ -821,7 +1115,7 @@ SEXP DBearded2::R_internal_sqrt_probs(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars);
+    Plan_7.create(MemAllocator, arg_pars);
     
     AdtArrayPlanActor::R_to_ADlib(MemAllocator, (char*)REAL(pars), (char*)arg_pars);
     
@@ -830,7 +1124,7 @@ SEXP DBearded2::R_internal_sqrt_probs(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars, (void*)REAL(pars));
+    Plan_7.create(MemAllocator, arg_pars, (void*)REAL(pars));
     
   }
   
@@ -855,6 +1149,34 @@ SEXP DBearded2::R_sqrt_probs(SEXP pars)
 SEXP DBearded2::R_nt_sqrt_probs(SEXP pars)
 {
   return (R_internal_sqrt_probs(pars, false));
+}
+
+SEXP DBearded2::_get_surv() const
+{
+  return (R_Scalar(surv));
+}
+
+SEXP DBearded2::_set_surv(SEXP arg_surv)
+{
+  R_CheckArgument("arg_surv", "REALSXP", REALSXP, arg_surv, __FILE__, __LINE__);
+  
+  surv = REAL(arg_surv)[0];
+  
+  return (R_Empty());
+}
+
+SEXP DBearded2::_get_survb1_pars() const
+{
+  return (R_Scalar(survb1_pars));
+}
+
+SEXP DBearded2::_set_survb1_pars(SEXP arg_survb1_pars)
+{
+  R_CheckArgument("arg_survb1_pars", "REALSXP", REALSXP, arg_survb1_pars, __FILE__, __LINE__);
+  
+  survb1_pars = REAL(arg_survb1_pars)[0];
+  
+  return (R_Empty());
 }
 
 SEXP DBearded2::_get_tcap(SEXP sArgList) const
@@ -951,7 +1273,7 @@ SEXP DBearded2::R_internal_unpack(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars);
+    Plan_7.create(MemAllocator, arg_pars);
     
     AdtArrayPlanActor::R_to_ADlib(MemAllocator, (char*)REAL(pars), (char*)arg_pars);
     
@@ -960,7 +1282,7 @@ SEXP DBearded2::R_internal_unpack(SEXP pars, bool bTranslate)
   {
     arg_pars = 0;
     
-    Plan_5.create(MemAllocator, arg_pars, (void*)REAL(pars));
+    Plan_7.create(MemAllocator, arg_pars, (void*)REAL(pars));
     
   }
   

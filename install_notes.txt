@@ -1,0 +1,21 @@
+### Installation notes for CKMR projects ###
+
+Need to install:
+-Tapenade
+-Visual Studio C++ 2015 comunity edition
+-Common tools for visual C++ 2015
+-Windows 8.1 SDK and Universal CRT SDK
+
+ADT -Need to run new.adt() to set up skeleton for new project
+#first run
+install.packages("//akc0ss-n086/NMML_USERS/paul.conn/Downloads/newadt_1.03.zip",repos=NULL,type="win.binary")
+#Mark emailed this to me - I also saved it in the templates folder
+
+library(newadt)
+new.adt("c:/users/paul.conn/git/CKMR","Bearded","Bd") #OR
+new.adt("c:/users/paul.conn/git/CKMR","Bearded2","Bd",src.templates=file.path(dirname(Sys.which('adt.exe')),'../templates/ckmr'))
+
+
+To run in R:
+-Need to get function load_ADT_DLL from fitbits.R
+-do "attach to process" from Debug window in VS to integrate R session with C++ (debugging, access of C objects)

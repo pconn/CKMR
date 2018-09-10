@@ -320,6 +320,75 @@
   	at topLevel.Tapenade.runTapenade(Tapenade.java:249)
   	at topLevel.Tapenade.<init>(Tapenade.java:91)
   	at topLevel.Tapenade.main(Tapenade.java:214)
+  java.lang.Throwable
+  	at fr.inria.tapenadeanalysis.ILLang.baseTree(ILLang.java:444)
+  	at ad.allDiff.BlockDifferentiator.collectRefDescriptorsToSave(BlockDifferentiator.java:8445)
+  	at ad.allDiff.BlockDifferentiator.buildCallAdjointNodes(BlockDifferentiator.java:7812)
+  	at ad.allDiff.BlockDifferentiator.buildAdjointNodes(BlockDifferentiator.java:7415)
+  	at ad.allDiff.BlockDifferentiator.differentiateBlock(BlockDifferentiator.java:644)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1230)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedureInMode(FlowGraphDifferentiator.java:825)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedure(FlowGraphDifferentiator.java:219)
+  	at ad.allDiff.CallGraphDifferentiator.differentiateDownFrom(CallGraphDifferentiator.java:681)
+  	at topLevel.Tapenade.analyzeFile(Tapenade.java:571)
+  	at topLevel.Tapenade.runTapenade(Tapenade.java:249)
+  	at topLevel.Tapenade.<init>(Tapenade.java:91)
+  	at topLevel.Tapenade.main(Tapenade.java:214)
+  java.lang.Throwable
+  	at fr.inria.tapenadeanalysis.ILLang.baseTree(ILLang.java:444)
+  	at ad.allDiff.BlockDifferentiator.collectRefDescriptorsToSave(BlockDifferentiator.java:8445)
+  	at ad.allDiff.BlockDifferentiator.buildCallAdjointNodes(BlockDifferentiator.java:7818)
+  	at ad.allDiff.BlockDifferentiator.buildAdjointNodes(BlockDifferentiator.java:7415)
+  	at ad.allDiff.BlockDifferentiator.differentiateBlock(BlockDifferentiator.java:644)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1230)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedureInMode(FlowGraphDifferentiator.java:825)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedure(FlowGraphDifferentiator.java:219)
+  	at ad.allDiff.CallGraphDifferentiator.differentiateDownFrom(CallGraphDifferentiator.java:681)
+  	at topLevel.Tapenade.analyzeFile(Tapenade.java:571)
+  	at topLevel.Tapenade.runTapenade(Tapenade.java:249)
+  	at topLevel.Tapenade.<init>(Tapenade.java:91)
+  	at topLevel.Tapenade.main(Tapenade.java:214)
+  java.lang.Throwable
+  	at fr.inria.tapenadeanalysis.ILLang.baseTree(ILLang.java:444)
+  	at ad.allDiff.BlockDifferentiator.collectRefDescriptorsToSave(BlockDifferentiator.java:8445)
+  	at ad.allDiff.BlockDifferentiator.buildCallAdjointNodes(BlockDifferentiator.java:7858)
+  	at ad.allDiff.BlockDifferentiator.buildAdjointNodes(BlockDifferentiator.java:7415)
+  	at ad.allDiff.BlockDifferentiator.differentiateBlock(BlockDifferentiator.java:644)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1230)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocks(FlowGraphDifferentiator.java:1179)
+  	at ad.allDiff.FlowGraphDifferentiator.precomputeDifferentiatedBlocksIn(FlowGraphDifferentiator.java:1131)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedureInMode(FlowGraphDifferentiator.java:825)
+  	at ad.allDiff.FlowGraphDifferentiator.differentiateProcedure(FlowGraphDifferentiator.java:219)
+  	at ad.allDiff.CallGraphDifferentiator.differentiateDownFrom(CallGraphDifferentiator.java:681)
+  	at topLevel.Tapenade.analyzeFile(Tapenade.java:571)
+  	at topLevel.Tapenade.runTapenade(Tapenade.java:249)
+  	at topLevel.Tapenade.<init>(Tapenade.java:91)
+  	at topLevel.Tapenade.main(Tapenade.java:214)
   ADT - Automatic Differentiation via Tapenade
   Version 1.09.4
   Written by Paavo Jumppanen
@@ -345,6 +414,7 @@
     Tool: (Get base Tree) Unexpected operator: eq
     Tool: (Get base Tree) Unexpected operator: eq
     Tool: (Get base Tree) Unexpected operator: eq
+    Tool: (Get base name) Unexpected operator: if
     Tool: (Get base Tree) Unexpected operator: le
     Tool: (Get base Tree) Unexpected operator: le
     Tool: (Get base Tree) Unexpected operator: le
@@ -357,7 +427,10 @@
     Tool: (Get base Tree) Unexpected operator: le
     Tool: (Get base Tree) Unexpected operator: le
     Tool: (Get base Tree) Unexpected operator: le
-    job is completed: total time 0.805 s
+    Tool: (Get base Tree) Unexpected operator: le
+    Tool: (Get base Tree) Unexpected operator: le
+    Tool: (Get base Tree) Unexpected operator: le
+    job is completed: total time 0.83 s
   
   exit code: 0
   
@@ -383,12 +456,14 @@
   Adding slice fixups
   Expanding macros in RIBearded2.hpp.tmp
   Expanding macros in RIBearded2.cpp.tmp
-  Bearded2_registration.cpp
   RIBearded2.cpp
-  RBearded2.cpp
   DBearded2.cpp
   Bearded2.cpp
-c:\users\paul.conn\git\ckmr\bearded2\bearded2\bearded2.cpp(204): warning C4101: 'pdy': unreferenced local variable
+c:\users\paul.conn\git\ckmr\bearded2\bearded2\bearded2.cpp(253): warning C4101: 'pdy': unreferenced local variable
+  Generating Code...
+  Compiling...
+  RBearded2.cpp
+  Bearded2_registration.cpp
   Generating Code...
      Creating library C:\Users\paul.conn\git\CKMR\Bearded2\x64\Debug\Bearded2.lib and object C:\Users\paul.conn\git\CKMR\Bearded2\x64\Debug\Bearded2.exp
 ADLib.lib(adtarrays.obj) : warning LNK4099: PDB 'ADLib.pdb' was not found with 'ADLib.lib(adtarrays.obj)' or at 'C:\Users\paul.conn\git\CKMR\Bearded2\x64\Debug\ADLib.pdb'; linking object as if no debug info

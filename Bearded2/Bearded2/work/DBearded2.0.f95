@@ -85,23 +85,32 @@ MODULE COMMON
   INTEGER first_y
   INTEGER first_y_sample
   REAL inv_totfec_ys(first_y:last_y,0:1 )
+  INTEGER isamp_HS(n_HS )
   INTEGER isamp_POP(n_POP )
+  INTEGER jsamp_HS(n_HS )
   INTEGER jsamp_POP(n_POP )
   INTEGER last_y
   REAL(8) N0_f
   REAL(8) N0_m
   INTEGER n_comps_ytbsm(first_y:last_y,first_y:last_y,first_y:last_y,0:&
   &1,0:1 )
+  INTEGER n_HS
+  INTEGER n_hs_comps_yy(first_y:last_y,first_y:last_y)
+  INTEGER n_hs_match_yys(first_y:last_y,first_y:last_y,0:1 )
   INTEGER n_par
   INTEGER n_POP
   INTEGER n_samp
   REAL N_ys(first_y:last_y,0:1 )
   INTEGER nextpari
+  REAL Pr_HS_ybbs(first_y:last_y,first_y:last_y,first_y:last_y,0:1 )
   REAL Pr_PO_ytbs(first_y:last_y,first_y:last_y,first_y:last_y,0:1 )
   REAL(8) roi
+  REAL S_yij(first_y:last_y,first_y:last_y,first_y:last_y )
   INTEGER sex(n_samp )
+  INTEGER sex_HS(n_HS )
   REAL sqrt_Pr_PO_ytbs(first_y:last_y,first_y:last_y,first_y:last_y,0:1&
   & )
+  REAL(8) surv
   INTEGER tcap(n_samp )
   REAL temp_pars(n_par )
   INTEGER ymat_atmost(n_samp )
@@ -111,8 +120,6 @@ END
 ! ----------------------------------------------------------------------------
 
 
-! isex
-! y
 !  populate
 !  ---------------------------------------------------------------------------
 !  All CKMR probs
@@ -122,11 +129,12 @@ INTEGER , INTENT (IN) :: dummy
 
 USE COMMON
 
-  INTEGER pby, pdy, pcapt, pmaty, isex, oby
+  INTEGER pby, pdy, pcapt, pmaty, isex, oby, oby2
   Pr_PO_ytbs = 0
   pby = first_y
   DO WHILE(pby .LE. last_y)
   
+    pmaty = pby + amat
     pcapt = first_y_sample
     DO WHILE(pcapt .LE. last_y)
     
@@ -136,7 +144,6 @@ USE COMMON
         isex = 0
         DO WHILE(isex .LE. 1)
         
-          pmaty = pby + amat
           Pr_PO_ytbs(pby,pcapt,oby,isex) = one_if(pmaty .LE. oby) * one&
           &_if(pcapt .GT. oby) * one_if((pcapt - pby) .LE. 38) * one_if&
           &((pby - oby) .LE. 38) * inv_totfec_ys(oby,isex)
@@ -156,13 +163,41 @@ USE COMMON
   pby = pby + 1
   END DO 
   
+  Pr_HS_ybbs = 0
+  isex = 0
+  DO WHILE(isex .LE. 1)
+  
+    pby = first_y
+    DO WHILE(pby .LE. last_y)
+    
+      pmaty = pby + amat
+      oby = first_y
+      DO WHILE(oby .LE. last_y)
+      
+        oby2 = oby + 1
+        DO WHILE(oby2 .LE. last_y)
+        
+          Pr_HS_ybbs(pby,oby,oby2,isex) = one_if(pmaty .LE. oby) * inv_&
+          &totfec_ys(oby2,isex) * S_yij(pby,oby,oby2)
+        
+        oby2 = oby2 + 1
+        END DO 
+        
+      
+      oby = oby + 1
+      END DO 
+      
+    
+    pby = pby + 1
+    END DO 
+    
+  
+  isex = isex + 1
+  END DO 
+  
 END 
 
 
-! isex
-!  oby
-!  pcapt
-!  pmaty
 !  calc_probs
 !  ----------------------------------------------------------------------------
 !  Log-likelihood
@@ -172,7 +207,7 @@ REAL , INTENT (IN) :: pars(n_par )
 
 USE COMMON
 
-  INTEGER pby, pcapt, oby, isex
+  INTEGER pby, pcapt, isex, oby, oby2, tmp_pby
   REAL(8) tot_lglk
   ! //
   CALL Bearded2__unpack(pars)
@@ -180,94 +215,78 @@ USE COMMON
   CALL Bearded2__populate(0)
   CALL Bearded2__calc_probs(0)
   tot_lglk = 0
-  pby = first_y
-  DO WHILE(pby .LE. last_y)
+  ! ////  PO Pairs  ////// 
+  isex = 0
+  DO WHILE(isex .LE. 1)
   
-    pcapt = first_y
-    DO WHILE(pcapt .LE. last_y)
+    pby = first_y
+    DO WHILE(pby .LE. last_y)
     
-      oby = first_y
-      DO WHILE(oby .LE. last_y)
+      pcapt = first_y
+      DO WHILE(pcapt .LE. last_y)
       
-        isex = 0
-        DO WHILE(isex .LE. 1)
-        !  Poisson approximation: fine if N is fairly big
-        ! 
-        !         				  tot_lglk +=
-        !         					-n_comps_ytb[pmaty][pcapt][oby] *
-        !         					Pr_PO_ytb[pmaty][pcapt][oby]
-        !         					+ n_log_p(
-        !         						n_PO_ytb[pmaty][pcapt][oby],
-        !         						n_comps_ytb[pmaty][pcapt][oby] *
-        !         						Pr_PO_ytb[pmaty][pcapt][oby]
-        !         					);
-        !         				  
+        oby = first_y
+        DO WHILE(oby .LE. last_y)
         
           tot_lglk = tot_lglk + (n_log_p(n_comps_ytbsm(pby,pcapt,oby,is&
-          &ex,0),1 - Pr_PO_ytbs(pby,pcapt,oby,isex)))
+          &ex,0),1.0 - Pr_PO_ytbs(pby,pcapt,oby,isex)) + n_log_p(n_comp&
+          &s_ytbsm(pby,pcapt,oby,isex,1),Pr_PO_ytbs(pby,pcapt,oby,isex)&
+          &))
         
-        isex = isex + 1
+        oby = oby + 1
         END DO 
         
       
-      oby = oby + 1
+      pcapt = pcapt + 1
       END DO 
       
     
-    pcapt = pcapt + 1
+    pby = pby + 1
     END DO 
     
   
-  pby = pby + 1
+  isex = isex + 1
   END DO 
   
-  ! isex
-  !  oby
+  ! oby
   !  pcapt
   !  pmaty
-  pby = first_y
-  DO WHILE(pby .LE. last_y)
-  
-    pcapt = first_y
-    DO WHILE(pcapt .LE. last_y)
-    
-      oby = first_y
-      DO WHILE(oby .LE. last_y)
-      
-        isex = 0
-        DO WHILE(isex .LE. 1)
-        
-          tot_lglk = tot_lglk + (n_log_p(n_comps_ytbsm(pby,pcapt,oby,is&
-          &ex,1),Pr_PO_ytbs(pby,pcapt,oby,isex)))
-        
-        isex = isex + 1
-        END DO 
-        
-      
-      oby = oby + 1
-      END DO 
-      
-    
-    pcapt = pcapt + 1
-    END DO 
-    
-  
-  pby = pby + 1
-  END DO 
-  
   !  isex
-  !  oby
-  !  pcapt
-  !  pmaty
-  !  Binomial version could be:
-  !  tot_lglk += n_log_p( n_PO_ytb[ pmaty][ pcapt][ oby],
-  !       Pr_PO_ytb[ pmaty][ pcapt][ oby]) +
-  !     n_log_p( n_comps_ytb[ pmaty][ pcapt][ oby] - n_PO_ytb[ pmaty][ pcapt][ oby],
-  !       1-Pr_PO_ytb[ pmaty][ pcapt][ oby]);
+  ! ////   Half Sibs  //////
+  isex = 0
+  DO WHILE(isex .LE. 1)
+  ! for (pby = first_y; pby <= last_y; pby++) {  //we'll skip parent birth year since we'll be assuming constant survival of matures for now 
+  ! pmaty = pby + amat;
+  ! we need to give a parents birth year such that they will be mature 
+  
+    oby = first_y + 8
+    DO WHILE(oby .LE. last_y)
+    
+      tmp_pby = oby - 7
+      oby2 = oby + 1
+      DO WHILE(oby2 .LE. last_y)
+      
+        tot_lglk = tot_lglk + (n_log_p(n_hs_comps_yy(oby,oby2),1.0 - Pr&
+        &_HS_ybbs(tmp_pby,oby,oby2,isex)) + n_log_p(n_hs_match_yys(oby,&
+        &oby2,isex),Pr_HS_ybbs(tmp_pby,oby,oby2,isex)))
+      
+      oby2 = oby2 + 1
+      END DO 
+      
+    
+    oby = oby + 1
+    END DO 
+    
+  
+  isex = isex + 1
+  END DO 
+  
+  ! }
   !  Bin version *without* n_log_p needs if-statements to avoid log(0)
   !  and should use log1p( -Pr_PO_ytb[ pmaty][ pcapt][ oby])
   !  otherwise you can get rounding problems when N is large.
   !  You have been warned !
+  ! for debugging to see what's going on w/ tot_lglk=NA 
   IF (tot_lglk .NE. tot_lglk) THEN 
   
     isex = 2
@@ -299,7 +318,7 @@ SUBROUTINE Bearded2__make_data_summaries()
 USE COMMON
 
   INTEGER i_samp, j_samp, this_by, this_oby, this_capt, this_pby, this_&
-  &maty, this_sex, i_POP
+  &maty, this_sex, i_POP, i_HS
   !  compute birth years for each sampled animal
   i_samp = 1
   DO WHILE(i_samp .LE. n_samp)
@@ -322,6 +341,7 @@ USE COMMON
   
     j_samp = i_samp + 1
     DO WHILE(j_samp .LE. n_samp)
+    ! /////   PARENT OFFSPRING /////
     !  In this case, exclude comps where adult caught in year of juve birth...
     !  depends on biol & sampling
     !  First case: i is P, j is O
@@ -353,6 +373,23 @@ USE COMMON
       
         n_comps_ytbsm(this_pby,this_capt,this_oby,this_sex,0) = n_comps&
         &_ytbsm(this_pby,this_capt,this_oby,this_sex,0) + (1)
+      END IF 
+      
+      ! //    HALF SIB   /////
+      ! don't make comparison of individuals caught in same year
+      IF (by(i_samp) .NE. by(j_samp)) THEN 
+      
+        IF (by(i_samp) .LT. by(j_samp)) THEN 
+        
+          n_hs_comps_yy(by(i_samp),by(j_samp)) = n_hs_comps_yy(by(i_sam&
+          &p),by(j_samp)) + (1)
+        
+        ELSE 
+        
+          n_hs_comps_yy(by(j_samp),by(i_samp)) = n_hs_comps_yy(by(j_sam&
+          &p),by(i_samp)) + (1)
+        END IF 
+        
       END IF 
       
     
@@ -408,9 +445,41 @@ USE COMMON
   i_POP = i_POP + 1
   END DO 
   
+  !  i_POP
+  i_HS = 1
+  DO WHILE(i_HS .LT. n_HS)
+  
+    i_samp = isamp_HS(i_HS)
+    j_samp = jsamp_HS(i_HS)
+    IF (by(i_samp) .NE. by(j_samp)) THEN 
+    
+      IF (by(i_samp) .LT. by(j_samp)) THEN 
+      
+        n_hs_match_yys(by(i_samp),by(j_samp),sex_HS(i_HS)) = n_hs_match&
+        &_yys(by(i_samp),by(j_samp),sex_HS(i_HS)) + (1)
+        n_hs_comps_yy(by(i_samp),by(j_samp)) = n_hs_comps_yy(by(i_samp)&
+        &,by(j_samp)) - (1)
+      
+      ELSE 
+      
+        n_hs_match_yys(by(j_samp),by(i_samp),sex_HS(i_HS)) = n_hs_match&
+        &_yys(by(j_samp),by(i_samp),sex_HS(i_HS)) + (1)
+        n_hs_comps_yy(by(j_samp),by(i_samp)) = n_hs_comps_yy(by(j_samp)&
+        &,by(i_samp)) - (1)
+      END IF 
+      
+    END IF 
+    
+  
+  i_HS = i_HS + 1
+  END DO 
+  
 END 
 
 
+! b_mort = exp(next_param());
+! c_mort = exp(next_param());
+! d_mort = exp(next_param());
 !  Hide the next bit from  ADT; for one thing, strings aren't understood...
 !  but there never any reason to AD this, so don't
 !  unpack
@@ -438,7 +507,7 @@ INTEGER , INTENT (IN) :: dummy
 
 USE COMMON
 
-  INTEGER y, isex
+  INTEGER y, isex, i, j, iage
   N_ys(first_y,0) = N0_f
   N_ys(first_y,1) = N0_m
   y = first_y + 1
@@ -466,13 +535,40 @@ USE COMMON
     isex = 0
     DO WHILE(isex .LE. 1)
     
-      inv_totfec_ys(y,isex) = 1.0 / N_ys(y,isex)
+      inv_totfec_ys(y,isex) = 1.0 / (surv * N_ys(y,isex))
     
     isex = isex + 1
     END DO 
     
   
   y = y + 1
+  END DO 
+  
+  S_yij = 0
+  !  Fill survival matrix
+  i = first_y
+  DO WHILE(i .LE. last_y)
+  ! implies no matches if half sibs born in same year
+  
+    j = i + 1
+    DO WHILE(j .LE. last_y)
+    
+      iage = j - i
+      y = first_y
+      DO WHILE(y .LE. last_y)
+      ! S_yij[y][i][j] = exp(-pow(b_mort*iage, c_mort) - pow(b_mort*iage, 1.0 / c_mort) - d_mort * iage); //could be more efficient if just defined as a vector and filled here
+      
+        S_yij(y,i,j) = ((surv) ** (iage))
+      
+      y = y + 1
+      END DO 
+      
+    
+    j = j + 1
+    END DO 
+    
+  
+  i = i + 1
   END DO 
   
 END 
@@ -527,7 +623,7 @@ USE COMMON
 END 
 
 
-!  i_POP
+!  i_HS
 !  ... NB I don't mind using if's in the constructor, since it's only run once
 !  ... in lglk code, one_if() is faster
 !  make_data_summaries
@@ -554,6 +650,7 @@ USE COMMON
   roi = EXP(Bearded2__next_param())
   N0_f = EXP(Bearded2__next_param())
   N0_m = EXP(Bearded2__next_param())
+  surv = 1.0 / (1.0 + EXP(-Bearded2__next_param()))
 END 
 
 

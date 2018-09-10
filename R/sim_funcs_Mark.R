@@ -57,6 +57,139 @@ sample_seal_sim <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
   return( returnList( samps, isamp_POP, jsamp_POP))
 }
 
+sample_seal_sim2 <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
+  ## Two-sex version
+  ## POPs, FSPs, mat & pat HSPs
+  ## See "return" at the end for outputs
+  ## if print.==TRUE, show simple summaries (ie demographic truth)
+  ## EG: set.seed( 99); test <- sample_seal_sim( bs2, first_y=31, last_y=50, samp_size=100)
+  
+  most_bs <- bs %where% (BY>0) # founders are born in year "-1"--- zap them
+  
+  # most_bs <- most_bs %where% (SEX=='F') # *** FEMALES ONLY *** !!!
+  
+  ysamp <- first_y:last_y
+  
+  # I *think* this uses the "right" intercept etc:
+  if( print.) {
+    print( summary( glm( c( fmatat[ first_y:last_y]) ~ I( 0:(last_y-first_y)), family=poisson( link=log))))
+    scatn( 'Mean adult females: %5.2f', mean( fmatat[ first_y:last_y]))
+  }
+  
+  if( length( samp_size)==1) {
+    samp_size <- rep( samp_size, length( ysamp))
+  }
+  samp_size <- offarray( samp_size, first=first_y, last=last_y)
+  n_samps <- sum( samp_size)
+  
+  # "Empty" data.frame of correct size
+  samps <- most_bs[ rep( 1, n_samps),]
+  
+  
+  last_samp_row <- 0
+  for( iy in ysamp) {
+    die_now <- which( most_bs$DY == iy)
+    samp_now <- sample( die_now, samp_size[ iy], replace=FALSE)
+    
+    new_samp_rows <- last_samp_row + (1:samp_size[iy])
+    samps[ new_samp_rows,] <- most_bs[ samp_now,]
+    last_samp_row <- tail( new_samp_rows, 1)
+  }
+  
+  # could do this:
+  # mumids <- with( samps, ID %that.are.in% MUM) # or use base::intersect() if you care nothing for clarity
+  mum_rows <- match( samps$ID, samps$MUM, 0) # NB one mum can have several offspring ...
+  mumids <- samps$ID[ mum_rows>0]            # but these are unique; only the first offo of each mum
+  
+  is_off <- samps$MUM %in% mumids # ... but each offo in a MOP has to have one of those mums
+  
+  isamp_MOP <- which( is_off) # isamp is always the offspring
+  jsamp_MOP <- match( samps$MUM[ isamp_MOP], samps$ID) # jsamp is always the parent
+  
+  dad_rows <- match( samps$ID, samps$DAD, 0) # NB one mum can have several offspring ...
+  dadids <- samps$ID[ dad_rows>0]            # but these are unique; only the first offo of each mum
+  
+  is_off <- samps$DAD %in% dadids # ... but each offo in a MOP has to have one of those mums
+  
+  isamp_FOP <- which( is_off) # isamp is always the offspring
+  jsamp_FOP <- match( samps$DAD[ isamp_FOP], samps$ID) # jsamp is always the parent
+  
+  isamp_POP <- c( isamp_MOP, isamp_FOP)
+  jsamp_POP <- c( jsamp_MOP, jsamp_FOP)
+  
+  #### Sibs: clusters can occur. If eg 4 animals have same MUM, that generates 6 MHSPs. I don't see a "neat"
+  # ... way to vectorize that; since there won't be that many sib-pairs, just loop over relevant parents
+  
+  # FSPs
+  mapa <- with( samps,  MUM %&% '&' %&% DAD)
+  FSPars <- unique( mapa[ duplicated( mapa)])
+  
+  # How many overall...
+  tabbo <- tabulate( table( mapa %that.are.in% FSPars)) # tabbo[1] = #FSPars occuring once (zero), [2] = #FSPars of just one FSP, etc
+  nx <- seq_along( tabbo)
+  n_FSP <- tabbo %**% ( nx * (nx-1) / 2)
+  
+  isamp_FSP <- jsamp_FSP <- integer( n_FSP)
+  ii <- 0
+  for( iFSPar in FSPars) {
+    whicho <- which( mapa==iFSPar)
+    eg <- expand.grid( i=whicho, j=whicho) %where% (i < j)
+    isamp_FSP[ ii + (1 %upto% nrow( eg))] <- eg$i
+    jsamp_FSP[ ii + (1 %upto% nrow( eg))] <- eg$j
+    ii <- ii + nrow( eg)
+  }
+  FSP_samp_combo <- sprintf( '%s&%s', isamp_FSP, jsamp_FSP) # used to check HSPs later
+  
+  isamp_HSP <- jsamp_HSP <- list( MUM=integer(), DAD=integer())
+  
+  for( sharpar in cq( MUM, DAD)) {
+    HSPars <- unique( samps[[ sharpar]] %such.that% duplicated(.))
+    tabbo <- tabulate( table( samps[[ sharpar]] %that.are.in% HSPars))
+    nx <- seq_along( tabbo)
+    n_HSP <- tabbo %**% ( nx * (nx-1) / 2)
+    
+    isamp <- jsamp <- integer( n_HSP)
+    ii <- 0
+    for( iHSPar in HSPars) {
+      whicho <- which( samps[[ sharpar]]==iHSPar)
+      eg <- expand.grid( i=whicho, j=whicho) %where% (i < j)
+      isamp[ ii + (1 %upto% nrow( eg))] <- eg$i
+      jsamp[ ii + (1 %upto% nrow( eg))] <- eg$j
+      ii <- ii + nrow( eg)
+    }
+    
+    # Eliminate FSPs:
+    is_FSP <- sprintf( '%s&%s', isamp, jsamp) %in% FSP_samp_combo
+    isamp <- isamp[ !is_FSP]
+    jsamp <- jsamp[ !is_FSP]
+    
+    isamp_HSP[[ sharpar]] <- isamp
+    jsamp_HSP[[ sharpar]] <- jsamp
+    
+    # Full realism would blur this by adding mtDNA and not recording definite MHSP/PHSP
+  }
+  
+  isamp_MHSP <- isamp_HSP$MUM
+  jsamp_MHSP <- jsamp_HSP$MUM
+  isamp_PHSP <- isamp_HSP$DAD
+  jsamp_PHSP <- jsamp_HSP$DAD
+  
+  
+  # Could also do GGPs; NFN
+  
+  
+  samps <- samps[ cq( ID, SEX, DY, DA)]
+  # samps$DY is "tcap"
+  # samps$DA is "a"
+  return( returnList(
+    samps,
+    isamp_POP, jsamp_POP, # ie rows in 'samps'
+    isamp_FSP, jsamp_FSP,
+    isamp_MHSP, jsamp_MHSP,
+    isamp_PHSP, jsamp_PHSP
+  ))
+}
+
 read_seal_sim <- function( filename=NULL, all_bs=NULL) {
   library( mvbutils)
   library( offarray)

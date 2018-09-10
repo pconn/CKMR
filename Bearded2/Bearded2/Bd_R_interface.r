@@ -5,9 +5,9 @@ Bd.destroy <- function(Context)
   return (.External('_Bd.destroy', Context))
 }
 
-Bd.create <- function(first_y, first_y_sample, last_y, n_par, n_samp, n_POP, amat, tcap, a, sex, isamp_POP, jsamp_POP)
+Bd.create <- function(first_y, first_y_sample, last_y, n_par, n_samp, n_POP, n_HS, amat, tcap, a, sex, isamp_POP, jsamp_POP, isamp_HS, jsamp_HS, sex_HS)
 {
-  return (.External('_Bd.create', as.integer(first_y), as.integer(first_y_sample), as.integer(last_y), as.integer(n_par), as.integer(n_samp), as.integer(n_POP), as.integer(amat), as.integer(tcap), as.integer(a), as.integer(sex), as.integer(isamp_POP), as.integer(jsamp_POP)))
+  return (.External('_Bd.create', as.integer(first_y), as.integer(first_y_sample), as.integer(last_y), as.integer(n_par), as.integer(n_samp), as.integer(n_POP), as.integer(n_HS), as.integer(amat), as.integer(tcap), as.integer(a), as.integer(sex), as.integer(isamp_POP), as.integer(jsamp_POP), as.integer(isamp_HS), as.integer(jsamp_HS), as.integer(sex_HS)))
 }
 
 Bd.get.a <- function(Context, ...)
@@ -130,6 +130,26 @@ Bd.set.nt.inv_totfec_ysb1_pars <- function(Context, Arg, ...)
   return (.External('_Bd.set.nt.inv_totfec_ysb1_pars', Context, as.double(Arg), list(...)))
 }
 
+Bd.get.isamp_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.isamp_HS', Context, list(...)))
+}
+
+Bd.set.isamp_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.isamp_HS', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.nt.isamp_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.isamp_HS', Context, list(...)))
+}
+
+Bd.set.nt.isamp_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.isamp_HS', Context, as.integer(Arg), list(...)))
+}
+
 Bd.get.isamp_POP <- function(Context, ...)
 {
   return (.External('_Bd.get.isamp_POP', Context, list(...)))
@@ -148,6 +168,26 @@ Bd.get.nt.isamp_POP <- function(Context, ...)
 Bd.set.nt.isamp_POP <- function(Context, Arg, ...)
 {
   return (.External('_Bd.set.nt.isamp_POP', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.jsamp_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.jsamp_HS', Context, list(...)))
+}
+
+Bd.set.jsamp_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.jsamp_HS', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.nt.jsamp_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.jsamp_HS', Context, list(...)))
+}
+
+Bd.set.nt.jsamp_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.jsamp_HS', Context, as.integer(Arg), list(...)))
 }
 
 Bd.get.jsamp_POP <- function(Context, ...)
@@ -270,6 +310,56 @@ Bd.set.nt.n_comps_ytbsm <- function(Context, Arg, ...)
   return (.External('_Bd.set.nt.n_comps_ytbsm', Context, as.integer(Arg), list(...)))
 }
 
+Bd.get.n_HS <- function(Context)
+{
+  return (.External('_Bd.get.n_HS', Context))
+}
+
+Bd.set.n_HS <- function(Context, Arg)
+{
+  return (.External('_Bd.set.n_HS', Context, as.integer(Arg)))
+}
+
+Bd.get.n_hs_comps_yy <- function(Context, ...)
+{
+  return (.External('_Bd.get.n_hs_comps_yy', Context, list(...)))
+}
+
+Bd.set.n_hs_comps_yy <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.n_hs_comps_yy', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.nt.n_hs_comps_yy <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.n_hs_comps_yy', Context, list(...)))
+}
+
+Bd.set.nt.n_hs_comps_yy <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.n_hs_comps_yy', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.n_hs_match_yys <- function(Context, ...)
+{
+  return (.External('_Bd.get.n_hs_match_yys', Context, list(...)))
+}
+
+Bd.set.n_hs_match_yys <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.n_hs_match_yys', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.nt.n_hs_match_yys <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.n_hs_match_yys', Context, list(...)))
+}
+
+Bd.set.nt.n_hs_match_yys <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.n_hs_match_yys', Context, as.integer(Arg), list(...)))
+}
+
 Bd.get.n_par <- function(Context)
 {
   return (.External('_Bd.get.n_par', Context))
@@ -370,6 +460,66 @@ Bd.nt.populate <- function(Context, dummy)
   return (.External('_Bd.nt.populate', Context, dummy))
 }
 
+Bd.get.Pr_HS_bbs <- function(Context, ...)
+{
+  return (.External('_Bd.get.Pr_HS_bbs', Context, list(...)))
+}
+
+Bd.set.Pr_HS_bbs <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.Pr_HS_bbs', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.nt.Pr_HS_bbs <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.Pr_HS_bbs', Context, list(...)))
+}
+
+Bd.set.nt.Pr_HS_bbs <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.Pr_HS_bbs', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.Pr_HS_ybbs <- function(Context, ...)
+{
+  return (.External('_Bd.get.Pr_HS_ybbs', Context, list(...)))
+}
+
+Bd.set.Pr_HS_ybbs <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.Pr_HS_ybbs', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.nt.Pr_HS_ybbs <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.Pr_HS_ybbs', Context, list(...)))
+}
+
+Bd.set.nt.Pr_HS_ybbs <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.Pr_HS_ybbs', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.pr_hs_ybbsb1_pars <- function(Context, ...)
+{
+  return (.External('_Bd.get.pr_hs_ybbsb1_pars', Context, list(...)))
+}
+
+Bd.set.pr_hs_ybbsb1_pars <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.pr_hs_ybbsb1_pars', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.nt.pr_hs_ybbsb1_pars <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.pr_hs_ybbsb1_pars', Context, list(...)))
+}
+
+Bd.set.nt.pr_hs_ybbsb1_pars <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.pr_hs_ybbsb1_pars', Context, as.double(Arg), list(...)))
+}
+
 Bd.get.Pr_PO_ytbs <- function(Context, ...)
 {
   return (.External('_Bd.get.Pr_PO_ytbs', Context, list(...)))
@@ -430,6 +580,46 @@ Bd.set.roib1_pars <- function(Context, Arg)
   return (.External('_Bd.set.roib1_pars', Context, as.double(Arg)))
 }
 
+Bd.get.S_yij <- function(Context, ...)
+{
+  return (.External('_Bd.get.S_yij', Context, list(...)))
+}
+
+Bd.set.S_yij <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.S_yij', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.nt.S_yij <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.S_yij', Context, list(...)))
+}
+
+Bd.set.nt.S_yij <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.S_yij', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.s_yijb1_pars <- function(Context, ...)
+{
+  return (.External('_Bd.get.s_yijb1_pars', Context, list(...)))
+}
+
+Bd.set.s_yijb1_pars <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.s_yijb1_pars', Context, as.double(Arg), list(...)))
+}
+
+Bd.get.nt.s_yijb1_pars <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.s_yijb1_pars', Context, list(...)))
+}
+
+Bd.set.nt.s_yijb1_pars <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.s_yijb1_pars', Context, as.double(Arg), list(...)))
+}
+
 Bd.get.sex <- function(Context, ...)
 {
   return (.External('_Bd.get.sex', Context, list(...)))
@@ -448,6 +638,26 @@ Bd.get.nt.sex <- function(Context, ...)
 Bd.set.nt.sex <- function(Context, Arg, ...)
 {
   return (.External('_Bd.set.nt.sex', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.sex_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.sex_HS', Context, list(...)))
+}
+
+Bd.set.sex_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.sex_HS', Context, as.integer(Arg), list(...)))
+}
+
+Bd.get.nt.sex_HS <- function(Context, ...)
+{
+  return (.External('_Bd.get.nt.sex_HS', Context, list(...)))
+}
+
+Bd.set.nt.sex_HS <- function(Context, Arg, ...)
+{
+  return (.External('_Bd.set.nt.sex_HS', Context, as.integer(Arg), list(...)))
 }
 
 Bd.get.sqrt_Pr_PO_ytbs <- function(Context, ...)
@@ -478,6 +688,26 @@ Bd.sqrt_probs <- function(Context, pars)
 Bd.nt.sqrt_probs <- function(Context, pars)
 {
   return (.External('_Bd.nt.sqrt_probs', Context, pars))
+}
+
+Bd.get.surv <- function(Context)
+{
+  return (.External('_Bd.get.surv', Context))
+}
+
+Bd.set.surv <- function(Context, Arg)
+{
+  return (.External('_Bd.set.surv', Context, as.double(Arg)))
+}
+
+Bd.get.survb1_pars <- function(Context)
+{
+  return (.External('_Bd.get.survb1_pars', Context))
+}
+
+Bd.set.survb1_pars <- function(Context, Arg)
+{
+  return (.External('_Bd.set.survb1_pars', Context, as.double(Arg)))
 }
 
 Bd.get.tcap <- function(Context, ...)

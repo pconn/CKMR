@@ -25,6 +25,7 @@ protected:
   int n_par;
   int n_samp;  // individuals genotyped
   int n_POP;   // pairs actually found
+  int n_HS;    // number of half sibs found
   int amat;    // age-at-maturity; assumed 100% thereafter
 
   ARRAY_1I tcap/* n_samp */;     // year of capture/sampling
@@ -32,6 +33,11 @@ protected:
   ARRAY_1I sex/* n_samp */; // sex (0 = female, 1  = male)
   ARRAY_1I isamp_POP/* n_POP */;   // sample-index of first animal in this POP
   ARRAY_1I jsamp_POP/* n_POP */;   // ditto for second
+  ARRAY_1I isamp_HS/* n_HS */;   // sample-index of first animal in this HS
+  ARRAY_1I jsamp_HS/* n_HS */;   // ditto for second
+  ARRAY_1I sex_HS/* n_HS */;   // parental sex of half-sibs
+
+
 
 
   /* AUTODEC 1 */
@@ -39,6 +45,11 @@ protected:
   double roi;     // proportional Rate Of Increase (ie 1 means constant)
   double N0_f;      // mature female abund in first_y
   double N0_m;     // mature male abund in first_y
+  double surv;
+  //double b_mort;   // b,c,d are reduced additive Weibull parameters (see Choquet et al. 2011 MEE)
+  //double c_mort;
+  //double d_mort;
+
   int nextpari;
 
   // Data summaries, set up during the constructor
@@ -48,13 +59,18 @@ protected:
   ARRAY_1I by/* n_samp */;
   ARRAY_1I ymat_atmost/* n_samp */;
   ARRAY_5I n_comps_ytbsm /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1, 0:1 */;
+  ARRAY_2I n_hs_comps_yy /* first_y:last_y, first_y:last_y*/;
+  ARRAY_3I n_hs_match_yys /* first_y:last_y, first_y:last_y, 0:1 */;
 
   // now some workspace things
   ARRAY_4D Pr_PO_ytbs/* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */;
+  ARRAY_4D Pr_HS_ybbs/* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */;
+  ARRAY_3D Pr_HS_bbs/* first_y:last_y, first_y:last_y,0:1 */;
   ARRAY_4D sqrt_Pr_PO_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */; // design only
   ARRAY_2D inv_totfec_ys /* first_y:last_y, 0:1 */;
   ARRAY_2D N_ys /* first_y:last_y, 0:1 */;
   ARRAY_1D temp_pars/* n_par */;
+  ARRAY_3D S_yij/* first_y:last_y,first_y:last_y,first_y:last_y */;
 
   // Could have AUTOINIT 2 and AUTODEC 2 and AUTOINIT 3 etc here
   // ... needed iff array dims depend on calculations to be done during constructor

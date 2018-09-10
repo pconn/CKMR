@@ -386,6 +386,72 @@ EXPORT SEXP Bd_set_nt_inv_totfec_ysb1_pars(SEXP args)
 }
 
 
+EXPORT SEXP Bd_get_isamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_isamp_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_isamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_isamp_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_isamp_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_isamp_HS(arg_isamp_HS, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_isamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_isamp_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_isamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_isamp_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_isamp_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_isamp_HS(arg_isamp_HS, sArgList));
+}
+
+
 EXPORT SEXP Bd_get_isamp_POP(SEXP args)
 {
   SEXP rInstance;
@@ -449,6 +515,72 @@ EXPORT SEXP Bd_set_nt_isamp_POP(SEXP args)
   DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
   
   return (pContext->_set_nt_isamp_POP(arg_isamp_POP, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_jsamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_jsamp_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_jsamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_jsamp_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_jsamp_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_jsamp_HS(arg_jsamp_HS, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_jsamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_jsamp_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_jsamp_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_jsamp_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_jsamp_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_jsamp_HS(arg_jsamp_HS, sArgList));
 }
 
 
@@ -839,6 +971,167 @@ EXPORT SEXP Bd_set_nt_n_comps_ytbsm(SEXP args)
 }
 
 
+EXPORT SEXP Bd_get_n_HS(SEXP args)
+{
+  SEXP rInstance;
+  args = CDR(args); rInstance = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_n_HS());
+}
+
+EXPORT SEXP Bd_set_n_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_n_HS;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_n_HS = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_n_HS(arg_n_HS));
+}
+
+
+EXPORT SEXP Bd_get_n_hs_comps_yy(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_n_hs_comps_yy(sArgList));
+}
+
+EXPORT SEXP Bd_set_n_hs_comps_yy(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_n_hs_comps_yy;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_n_hs_comps_yy = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_n_hs_comps_yy(arg_n_hs_comps_yy, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_n_hs_comps_yy(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_n_hs_comps_yy(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_n_hs_comps_yy(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_n_hs_comps_yy;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_n_hs_comps_yy = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_n_hs_comps_yy(arg_n_hs_comps_yy, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_n_hs_match_yys(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_n_hs_match_yys(sArgList));
+}
+
+EXPORT SEXP Bd_set_n_hs_match_yys(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_n_hs_match_yys;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_n_hs_match_yys = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_n_hs_match_yys(arg_n_hs_match_yys, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_n_hs_match_yys(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_n_hs_match_yys(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_n_hs_match_yys(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_n_hs_match_yys;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_n_hs_match_yys = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_n_hs_match_yys(arg_n_hs_match_yys, sArgList));
+}
+
+
 EXPORT SEXP Bd_get_n_par(SEXP args)
 {
   SEXP rInstance;
@@ -1155,6 +1448,204 @@ EXPORT SEXP Bd_R_nt_populate(SEXP args)
   return (Result);
 }
 
+EXPORT SEXP Bd_get_Pr_HS_bbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_Pr_HS_bbs(sArgList));
+}
+
+EXPORT SEXP Bd_set_Pr_HS_bbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_Pr_HS_bbs;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_Pr_HS_bbs = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_Pr_HS_bbs(arg_Pr_HS_bbs, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_Pr_HS_bbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_Pr_HS_bbs(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_Pr_HS_bbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_Pr_HS_bbs;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_Pr_HS_bbs = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_Pr_HS_bbs(arg_Pr_HS_bbs, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_Pr_HS_ybbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_Pr_HS_ybbs(sArgList));
+}
+
+EXPORT SEXP Bd_set_Pr_HS_ybbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_Pr_HS_ybbs;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_Pr_HS_ybbs = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_Pr_HS_ybbs(arg_Pr_HS_ybbs, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_Pr_HS_ybbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_Pr_HS_ybbs(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_Pr_HS_ybbs(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_Pr_HS_ybbs;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_Pr_HS_ybbs = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_Pr_HS_ybbs(arg_Pr_HS_ybbs, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_pr_hs_ybbsb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_pr_hs_ybbsb1_pars(sArgList));
+}
+
+EXPORT SEXP Bd_set_pr_hs_ybbsb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_pr_hs_ybbsb1_pars;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_pr_hs_ybbsb1_pars = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_pr_hs_ybbsb1_pars(arg_pr_hs_ybbsb1_pars, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_pr_hs_ybbsb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_pr_hs_ybbsb1_pars(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_pr_hs_ybbsb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_pr_hs_ybbsb1_pars;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_pr_hs_ybbsb1_pars = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_pr_hs_ybbsb1_pars(arg_pr_hs_ybbsb1_pars, sArgList));
+}
+
+
 EXPORT SEXP Bd_get_Pr_PO_ytbs(SEXP args)
 {
   SEXP rInstance;
@@ -1345,6 +1836,138 @@ EXPORT SEXP Bd_set_roib1_pars(SEXP args)
 }
 
 
+EXPORT SEXP Bd_get_S_yij(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_S_yij(sArgList));
+}
+
+EXPORT SEXP Bd_set_S_yij(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_S_yij;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_S_yij = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_S_yij(arg_S_yij, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_S_yij(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_S_yij(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_S_yij(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_S_yij;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_S_yij = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_S_yij(arg_S_yij, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_s_yijb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_s_yijb1_pars(sArgList));
+}
+
+EXPORT SEXP Bd_set_s_yijb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_s_yijb1_pars;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_s_yijb1_pars = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_s_yijb1_pars(arg_s_yijb1_pars, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_s_yijb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_s_yijb1_pars(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_s_yijb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_s_yijb1_pars;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_s_yijb1_pars = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_s_yijb1_pars(arg_s_yijb1_pars, sArgList));
+}
+
+
 EXPORT SEXP Bd_get_sex(SEXP args)
 {
   SEXP rInstance;
@@ -1408,6 +2031,72 @@ EXPORT SEXP Bd_set_nt_sex(SEXP args)
   DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
   
   return (pContext->_set_nt_sex(arg_sex, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_sex_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_sex_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_sex_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_sex_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_sex_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_sex_HS(arg_sex_HS, sArgList));
+}
+
+
+EXPORT SEXP Bd_get_nt_sex_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP sArgList;
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_nt_sex_HS(sArgList));
+}
+
+EXPORT SEXP Bd_set_nt_sex_HS(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_sex_HS;
+  SEXP sArgList;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_sex_HS = CAR(args);
+  args = CDR(args); sArgList = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_nt_sex_HS(arg_sex_HS, sArgList));
 }
 
 
@@ -1510,6 +2199,64 @@ EXPORT SEXP Bd_R_nt_sqrt_probs(SEXP args)
   
   return (Result);
 }
+
+EXPORT SEXP Bd_get_surv(SEXP args)
+{
+  SEXP rInstance;
+  args = CDR(args); rInstance = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_surv());
+}
+
+EXPORT SEXP Bd_set_surv(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_surv;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_surv = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_surv(arg_surv));
+}
+
+
+EXPORT SEXP Bd_get_survb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  args = CDR(args); rInstance = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_get_survb1_pars());
+}
+
+EXPORT SEXP Bd_set_survb1_pars(SEXP args)
+{
+  SEXP rInstance;
+  SEXP arg_survb1_pars;
+  
+  
+  args = CDR(args); rInstance = CAR(args);
+  args = CDR(args); arg_survb1_pars = CAR(args);
+  
+  ASSERT_TYPE_TAG(rInstance, DBearded2);
+  
+  DBearded2* pContext = (DBearded2*)R_ExternalPtrAddr(rInstance);
+  
+  return (pContext->_set_survb1_pars(arg_survb1_pars));
+}
+
 
 EXPORT SEXP Bd_get_tcap(SEXP args)
 {

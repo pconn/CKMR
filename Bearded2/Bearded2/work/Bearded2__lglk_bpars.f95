@@ -12,7 +12,9 @@ MODULE COMMON_B
   INTEGER :: first_y_sample
   REAL :: inv_totfec_ys(first_y:last_y, 0:1)
   REAL :: inv_totfec_ysb1_pars(first_y:last_y, 0:1)
+  INTEGER :: isamp_hs(n_hs)
   INTEGER :: isamp_pop(n_pop)
+  INTEGER :: jsamp_hs(n_hs)
   INTEGER :: jsamp_pop(n_pop)
   INTEGER :: last_y
   REAL*8 :: n0_f
@@ -21,21 +23,33 @@ MODULE COMMON_B
   REAL*8 :: n0_mb1_pars
   INTEGER :: n_comps_ytbsm(first_y:last_y, first_y:last_y, first_y:&
 & last_y, 0:1, 0:1)
+  INTEGER :: n_hs
+  INTEGER :: n_hs_comps_yy(first_y:last_y, first_y:last_y)
+  INTEGER :: n_hs_match_yys(first_y:last_y, first_y:last_y, 0:1)
   INTEGER :: n_par
   INTEGER :: n_pop
   INTEGER :: n_samp
   REAL :: n_ys(first_y:last_y, 0:1)
   REAL :: n_ysb1_pars(first_y:last_y, 0:1)
   INTEGER :: nextpari
+  REAL :: pr_hs_ybbs(first_y:last_y, first_y:last_y, first_y:last_y, 0:1&
+& )
+  REAL :: pr_hs_ybbsb1_pars(first_y:last_y, first_y:last_y, first_y:&
+& last_y, 0:1)
   REAL :: pr_po_ytbs(first_y:last_y, first_y:last_y, first_y:last_y, 0:1&
 & )
   REAL :: pr_po_ytbsb1_pars(first_y:last_y, first_y:last_y, first_y:&
 & last_y, 0:1)
   REAL*8 :: roi
   REAL*8 :: roib1_pars
+  REAL :: s_yij(first_y:last_y, first_y:last_y, first_y:last_y)
+  REAL :: s_yijb1_pars(first_y:last_y, first_y:last_y, first_y:last_y)
   INTEGER :: sex(n_samp)
+  INTEGER :: sex_hs(n_hs)
   REAL :: sqrt_pr_po_ytbs(first_y:last_y, first_y:last_y, first_y:last_y&
 & , 0:1)
+  REAL*8 :: surv
+  REAL*8 :: survb1_pars
   INTEGER :: tcap(n_samp)
   REAL :: temp_pars(n_par)
   REAL :: temp_parsb1_pars(n_par)
@@ -45,13 +59,10 @@ END MODULE COMMON_B
 !  Differentiation of bearded2__lglk in reverse (adjoint) mode:
 !   gradient     of useful results: bearded2__lglk
 !   with respect to varying inputs: pars
-!   RW status of diff variables: roi:(loc) inv_totfec_ys:(loc)
-!                n_ys:(loc) temp_pars:(loc) n0_f:(loc) pr_po_ytbs:(loc)
-!                n0_m:(loc) bearded2__lglk:in-killed pars:out
-! isex
-!  oby
-!  pcapt
-!  pmaty
+!   RW status of diff variables: roi:(loc) s_yij:(loc) inv_totfec_ys:(loc)
+!                pr_hs_ybbs:(loc) surv:(loc) n_ys:(loc) temp_pars:(loc)
+!                n0_f:(loc) pr_po_ytbs:(loc) n0_m:(loc) bearded2__lglk:in-killed
+!                pars:out
 !  calc_probs
 !  ----------------------------------------------------------------------------
 !  Log-likelihood
@@ -61,7 +72,7 @@ SUBROUTINE BEARDED2__LGLK_BPARS(pars, parsb1_pars, bearded2__lglkb1_pars&
   REAL, INTENT(IN) :: pars(n_par)
   REAL :: parsb1_pars(n_par)
   USE COMMON_B
-  INTEGER :: pby, pcapt, oby, isex
+  INTEGER :: pby, pcapt, isex, oby, oby2, tmp_pby
   REAL*8 :: tot_lglk
   REAL*8 :: tot_lglkb1_pars
   REAL*8 :: N_LOG_P
@@ -69,6 +80,8 @@ SUBROUTINE BEARDED2__LGLK_BPARS(pars, parsb1_pars, bearded2__lglkb1_pars&
   REAL :: arg1b1_pars
   REAL*8 :: result1
   REAL*8 :: result1b1_pars
+  REAL*8 :: result2
+  REAL*8 :: result2b1_pars
   INTEGER :: ad_count
   INTEGER :: i
   INTEGER :: ad_count0
@@ -83,8 +96,6 @@ SUBROUTINE BEARDED2__LGLK_BPARS(pars, parsb1_pars, bearded2__lglkb1_pars&
   INTEGER :: i4
   INTEGER :: ad_count5
   INTEGER :: i5
-  INTEGER :: ad_count6
-  INTEGER :: i6
   REAL*8 :: bearded2__lglk
   REAL*8 :: bearded2__lglkb1_pars
 ! //
@@ -94,122 +105,120 @@ SUBROUTINE BEARDED2__LGLK_BPARS(pars, parsb1_pars, bearded2__lglkb1_pars&
   CALL PUSHREAL4ARRAY(n_ys, (last_y-first_y+1)*2)
   CALL BEARDED2__POPULATE(0)
   CALL BEARDED2__CALC_PROBS(0)
-  pby = first_y
+! ////  PO Pairs  ////// 
+  isex = 0
   ad_count2 = 0
-  DO WHILE (pby .LE. last_y)
-    pcapt = first_y
+  DO WHILE (isex .LE. 1)
+    pby = first_y
     ad_count1 = 0
-    DO WHILE (pcapt .LE. last_y)
-      oby = first_y
+    DO WHILE (pby .LE. last_y)
+      pcapt = first_y
       ad_count0 = 0
-      DO WHILE (oby .LE. last_y)
-        isex = 0
+      DO WHILE (pcapt .LE. last_y)
+        oby = first_y
         ad_count = 0
-        DO WHILE (isex .LE. 1)
-!  Poisson approximation: fine if N is fairly big
-! 
-!         				  tot_lglk +=
-!         					-n_comps_ytb[pmaty][pcapt][oby] *
-!         					Pr_PO_ytb[pmaty][pcapt][oby]
-!         					+ n_log_p(
-!         						n_PO_ytb[pmaty][pcapt][oby],
-!         						n_comps_ytb[pmaty][pcapt][oby] *
-!         						Pr_PO_ytb[pmaty][pcapt][oby]
-!         					);
-!         				  
-          CALL PUSHINTEGER4(isex)
-          isex = isex + 1
+        DO WHILE (oby .LE. last_y)
+          CALL PUSHINTEGER4(oby)
+          oby = oby + 1
           ad_count = ad_count + 1
         END DO
         CALL PUSHINTEGER4(ad_count)
-        CALL PUSHINTEGER4(oby)
-        oby = oby + 1
+        CALL PUSHINTEGER4(pcapt)
+        pcapt = pcapt + 1
         ad_count0 = ad_count0 + 1
       END DO
       CALL PUSHINTEGER4(ad_count0)
-      CALL PUSHINTEGER4(pcapt)
-      pcapt = pcapt + 1
+      CALL PUSHINTEGER4(pby)
+      pby = pby + 1
       ad_count1 = ad_count1 + 1
     END DO
     CALL PUSHINTEGER4(ad_count1)
-    CALL PUSHINTEGER4(pby)
-    pby = pby + 1
+    CALL PUSHINTEGER4(isex)
+    isex = isex + 1
     ad_count2 = ad_count2 + 1
   END DO
   CALL PUSHINTEGER4(ad_count2)
-! isex
-!  oby
+! oby
 !  pcapt
 !  pmaty
-  pby = first_y
-  ad_count6 = 0
-  DO WHILE (pby .LE. last_y)
-    pcapt = first_y
-    ad_count5 = 0
-    DO WHILE (pcapt .LE. last_y)
-      oby = first_y
-      ad_count4 = 0
-      DO WHILE (oby .LE. last_y)
-        isex = 0
-        ad_count3 = 0
-        DO WHILE (isex .LE. 1)
-          CALL PUSHINTEGER4(isex)
-          isex = isex + 1
-          ad_count3 = ad_count3 + 1
-        END DO
-        CALL PUSHINTEGER4(ad_count3)
-        CALL PUSHINTEGER4(oby)
-        oby = oby + 1
-        ad_count4 = ad_count4 + 1
+!  isex
+! ////   Half Sibs  //////
+  isex = 0
+  ad_count5 = 0
+  DO WHILE (isex .LE. 1)
+! for (pby = first_y; pby <= last_y; pby++) {  //we'll skip parent birth year since we'll be assuming constant survival of mature
+!s for now 
+! pmaty = pby + amat;
+! we need to give a parents birth year such that they will be mature 
+    oby = first_y + 8
+    ad_count4 = 0
+    DO WHILE (oby .LE. last_y)
+      CALL PUSHINTEGER4(tmp_pby)
+      tmp_pby = oby - 7
+      oby2 = oby + 1
+      ad_count3 = 0
+      DO WHILE (oby2 .LE. last_y)
+        CALL PUSHINTEGER4(oby2)
+        oby2 = oby2 + 1
+        ad_count3 = ad_count3 + 1
       END DO
-      CALL PUSHINTEGER4(ad_count4)
-      CALL PUSHINTEGER4(pcapt)
-      pcapt = pcapt + 1
-      ad_count5 = ad_count5 + 1
+      CALL PUSHINTEGER4(ad_count3)
+      CALL PUSHINTEGER4(oby)
+      oby = oby + 1
+      ad_count4 = ad_count4 + 1
     END DO
-    CALL PUSHINTEGER4(ad_count5)
-    CALL PUSHINTEGER4(pby)
-    pby = pby + 1
-    ad_count6 = ad_count6 + 1
+    CALL PUSHINTEGER4(ad_count4)
+    CALL PUSHINTEGER4(isex)
+    isex = isex + 1
+    ad_count5 = ad_count5 + 1
   END DO
-  CALL PUSHINTEGER4(ad_count6)
+  CALL PUSHINTEGER4(ad_count5)
   tot_lglkb1_pars = bearded2__lglkb1_pars
+  pr_hs_ybbsb1_pars = 0.0
+  CALL POPINTEGER4(ad_count5)
+  DO i5=1,ad_count5
+    CALL POPINTEGER4(isex)
+    CALL POPINTEGER4(ad_count4)
+    DO i4=1,ad_count4
+      CALL POPINTEGER4(oby)
+      CALL POPINTEGER4(ad_count3)
+      DO i3=1,ad_count3
+        CALL POPINTEGER4(oby2)
+        result1b1_pars = tot_lglkb1_pars
+        result2b1_pars = tot_lglkb1_pars
+        CALL N_LOG_P_BPARS(n_hs_match_yys(oby, oby2, isex), pr_hs_ybbs(&
+&                    tmp_pby, oby, oby2, isex), pr_hs_ybbsb1_pars(&
+&                    tmp_pby, oby, oby2, isex), result2b1_pars)
+        arg1 = 1.0 - pr_hs_ybbs(tmp_pby, oby, oby2, isex)
+        arg1b1_pars = 0.0
+        CALL N_LOG_P_BPARS(n_hs_comps_yy(oby, oby2), arg1, arg1b1_pars, &
+&                    result1b1_pars)
+        pr_hs_ybbsb1_pars(tmp_pby, oby, oby2, isex) = pr_hs_ybbsb1_pars(&
+&         tmp_pby, oby, oby2, isex) - arg1b1_pars
+      END DO
+      CALL POPINTEGER4(tmp_pby)
+    END DO
+  END DO
   pr_po_ytbsb1_pars = 0.0
-  CALL POPINTEGER4(ad_count6)
-  DO i6=1,ad_count6
-    CALL POPINTEGER4(pby)
-    CALL POPINTEGER4(ad_count5)
-    DO i5=1,ad_count5
-      CALL POPINTEGER4(pcapt)
-      CALL POPINTEGER4(ad_count4)
-      DO i4=1,ad_count4
-        CALL POPINTEGER4(oby)
-        CALL POPINTEGER4(ad_count3)
-        DO i3=1,ad_count3
-          CALL POPINTEGER4(isex)
+  CALL POPINTEGER4(ad_count2)
+  DO i2=1,ad_count2
+    CALL POPINTEGER4(isex)
+    CALL POPINTEGER4(ad_count1)
+    DO i1=1,ad_count1
+      CALL POPINTEGER4(pby)
+      CALL POPINTEGER4(ad_count0)
+      DO i0=1,ad_count0
+        CALL POPINTEGER4(pcapt)
+        CALL POPINTEGER4(ad_count)
+        DO i=1,ad_count
+          CALL POPINTEGER4(oby)
           result1b1_pars = tot_lglkb1_pars
+          result2b1_pars = tot_lglkb1_pars
           CALL N_LOG_P_BPARS(n_comps_ytbsm(pby, pcapt, oby, isex, 1), &
 &                      pr_po_ytbs(pby, pcapt, oby, isex), &
 &                      pr_po_ytbsb1_pars(pby, pcapt, oby, isex), &
-&                      result1b1_pars)
-        END DO
-      END DO
-    END DO
-  END DO
-  CALL POPINTEGER4(ad_count2)
-  DO i2=1,ad_count2
-    CALL POPINTEGER4(pby)
-    CALL POPINTEGER4(ad_count1)
-    DO i1=1,ad_count1
-      CALL POPINTEGER4(pcapt)
-      CALL POPINTEGER4(ad_count0)
-      DO i0=1,ad_count0
-        CALL POPINTEGER4(oby)
-        CALL POPINTEGER4(ad_count)
-        DO i=1,ad_count
-          CALL POPINTEGER4(isex)
-          result1b1_pars = tot_lglkb1_pars
-          arg1 = 1 - pr_po_ytbs(pby, pcapt, oby, isex)
+&                      result2b1_pars)
+          arg1 = 1.0 - pr_po_ytbs(pby, pcapt, oby, isex)
           arg1b1_pars = 0.0
           CALL N_LOG_P_BPARS(n_comps_ytbsm(pby, pcapt, oby, isex, 0), &
 &                      arg1, arg1b1_pars, result1b1_pars)
@@ -227,11 +236,9 @@ SUBROUTINE BEARDED2__LGLK_BPARS(pars, parsb1_pars, bearded2__lglkb1_pars&
 END SUBROUTINE BEARDED2__LGLK_BPARS
 
 !  Differentiation of bearded2__calc_probs in reverse (adjoint) mode:
-!   gradient     of useful results: pr_po_ytbs
-!   with respect to varying inputs: inv_totfec_ys
+!   gradient     of useful results: pr_hs_ybbs pr_po_ytbs
+!   with respect to varying inputs: s_yij inv_totfec_ys
 ! ----------------------------------------------------------------------------
-! isex
-! y
 !  populate
 !  ---------------------------------------------------------------------------
 !  All CKMR probs
@@ -239,7 +246,7 @@ SUBROUTINE BEARDED2__CALC_PROBS_BPARS(dummy)
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: dummy
   USE COMMON_B
-  INTEGER :: pby, pdy, pcapt, pmaty, isex, oby
+  INTEGER :: pby, pdy, pcapt, pmaty, isex, oby, oby2
   INTEGER :: ONE_IF
   INTEGER :: result1
   INTEGER :: result2
@@ -253,9 +260,19 @@ SUBROUTINE BEARDED2__CALC_PROBS_BPARS(dummy)
   INTEGER :: i1
   INTEGER :: ad_count2
   INTEGER :: i2
+  INTEGER :: ad_count3
+  INTEGER :: i3
+  INTEGER :: ad_count4
+  INTEGER :: i4
+  INTEGER :: ad_count5
+  INTEGER :: i5
+  INTEGER :: ad_count6
+  INTEGER :: i6
   pby = first_y
   ad_count2 = 0
   DO WHILE (pby .LE. last_y)
+    CALL PUSHINTEGER4(pmaty)
+    pmaty = pby + amat
     pcapt = first_y_sample
     ad_count1 = 0
     DO WHILE (pcapt .LE. last_y)
@@ -265,7 +282,6 @@ SUBROUTINE BEARDED2__CALC_PROBS_BPARS(dummy)
         isex = 0
         ad_count = 0
         DO WHILE (isex .LE. 1)
-          pmaty = pby + amat
           CALL PUSHINTEGER4(result1)
           result1 = ONE_IF(pmaty .LE. oby)
           CALL PUSHINTEGER4(result2)
@@ -293,7 +309,69 @@ SUBROUTINE BEARDED2__CALC_PROBS_BPARS(dummy)
     pby = pby + 1
     ad_count2 = ad_count2 + 1
   END DO
+  CALL PUSHINTEGER4(ad_count2)
+  isex = 0
+  ad_count6 = 0
+  DO WHILE (isex .LE. 1)
+    pby = first_y
+    ad_count5 = 0
+    DO WHILE (pby .LE. last_y)
+      CALL PUSHINTEGER4(pmaty)
+      pmaty = pby + amat
+      oby = first_y
+      ad_count4 = 0
+      DO WHILE (oby .LE. last_y)
+        oby2 = oby + 1
+        ad_count3 = 0
+        DO WHILE (oby2 .LE. last_y)
+          CALL PUSHINTEGER4(result1)
+          result1 = ONE_IF(pmaty .LE. oby)
+          CALL PUSHINTEGER4(oby2)
+          oby2 = oby2 + 1
+          ad_count3 = ad_count3 + 1
+        END DO
+        CALL PUSHINTEGER4(ad_count3)
+        CALL PUSHINTEGER4(oby)
+        oby = oby + 1
+        ad_count4 = ad_count4 + 1
+      END DO
+      CALL PUSHINTEGER4(ad_count4)
+      CALL PUSHINTEGER4(pby)
+      pby = pby + 1
+      ad_count5 = ad_count5 + 1
+    END DO
+    CALL PUSHINTEGER4(ad_count5)
+    CALL PUSHINTEGER4(isex)
+    isex = isex + 1
+    ad_count6 = ad_count6 + 1
+  END DO
+  s_yijb1_pars = 0.0
   inv_totfec_ysb1_pars = 0.0
+  DO i6=1,ad_count6
+    CALL POPINTEGER4(isex)
+    CALL POPINTEGER4(ad_count5)
+    DO i5=1,ad_count5
+      CALL POPINTEGER4(pby)
+      CALL POPINTEGER4(ad_count4)
+      DO i4=1,ad_count4
+        CALL POPINTEGER4(oby)
+        CALL POPINTEGER4(ad_count3)
+        DO i3=1,ad_count3
+          CALL POPINTEGER4(oby2)
+          inv_totfec_ysb1_pars(oby2, isex) = inv_totfec_ysb1_pars(oby2, &
+&           isex) + result1*s_yij(pby, oby, oby2)*pr_hs_ybbsb1_pars(pby&
+&           , oby, oby2, isex)
+          s_yijb1_pars(pby, oby, oby2) = s_yijb1_pars(pby, oby, oby2) + &
+&           result1*inv_totfec_ys(oby2, isex)*pr_hs_ybbsb1_pars(pby, oby&
+&           , oby2, isex)
+          pr_hs_ybbsb1_pars(pby, oby, oby2, isex) = 0.0
+          CALL POPINTEGER4(result1)
+        END DO
+      END DO
+      CALL POPINTEGER4(pmaty)
+    END DO
+  END DO
+  CALL POPINTEGER4(ad_count2)
   DO i2=1,ad_count2
     CALL POPINTEGER4(pby)
     CALL POPINTEGER4(ad_count1)
@@ -312,18 +390,14 @@ SUBROUTINE BEARDED2__CALC_PROBS_BPARS(dummy)
           CALL POPINTEGER4(result4)
           CALL POPINTEGER4(result3)
           CALL POPINTEGER4(result2)
-          pmaty = pby + amat
           CALL POPINTEGER4(result1)
         END DO
       END DO
     END DO
+    CALL POPINTEGER4(pmaty)
   END DO
 END SUBROUTINE BEARDED2__CALC_PROBS_BPARS
 
-! isex
-!  oby
-!  pcapt
-!  pmaty
 !  calc_probs
 !  ----------------------------------------------------------------------------
 !  Log-likelihood
@@ -331,11 +405,12 @@ FUNCTION BEARDED2__LGLK_CB(pars) RESULT (BEARDED2__LGLK)
   IMPLICIT NONE
   REAL, INTENT(IN) :: pars(n_par)
   USE COMMON_B
-  INTEGER :: pby, pcapt, oby, isex
+  INTEGER :: pby, pcapt, isex, oby, oby2, tmp_pby
   REAL*8 :: tot_lglk
   REAL*8 :: N_LOG_P
   REAL :: arg1
   REAL*8 :: result1
+  REAL*8 :: result2
   REAL*8 :: bearded2__lglk
 ! //
   CALL BEARDED2__UNPACK_CB(pars)
@@ -343,73 +418,62 @@ FUNCTION BEARDED2__LGLK_CB(pars) RESULT (BEARDED2__LGLK)
   CALL BEARDED2__POPULATE(0)
   CALL BEARDED2__CALC_PROBS(0)
   tot_lglk = 0
-  pby = first_y
-  DO WHILE (pby .LE. last_y)
-    pcapt = first_y
-    DO WHILE (pcapt .LE. last_y)
-      oby = first_y
-      DO WHILE (oby .LE. last_y)
-        isex = 0
-        DO WHILE (isex .LE. 1)
-!  Poisson approximation: fine if N is fairly big
-! 
-!         				  tot_lglk +=
-!         					-n_comps_ytb[pmaty][pcapt][oby] *
-!         					Pr_PO_ytb[pmaty][pcapt][oby]
-!         					+ n_log_p(
-!         						n_PO_ytb[pmaty][pcapt][oby],
-!         						n_comps_ytb[pmaty][pcapt][oby] *
-!         						Pr_PO_ytb[pmaty][pcapt][oby]
-!         					);
-!         				  
-          arg1 = 1 - pr_po_ytbs(pby, pcapt, oby, isex)
+! ////  PO Pairs  ////// 
+  isex = 0
+  DO WHILE (isex .LE. 1)
+    pby = first_y
+    DO WHILE (pby .LE. last_y)
+      pcapt = first_y
+      DO WHILE (pcapt .LE. last_y)
+        oby = first_y
+        DO WHILE (oby .LE. last_y)
+          arg1 = 1.0 - pr_po_ytbs(pby, pcapt, oby, isex)
           result1 = N_LOG_P(n_comps_ytbsm(pby, pcapt, oby, isex, 0), &
 &           arg1)
-          tot_lglk = tot_lglk + result1
-          isex = isex + 1
-        END DO
-        oby = oby + 1
-      END DO
-      pcapt = pcapt + 1
-    END DO
-    pby = pby + 1
-  END DO
-! isex
-!  oby
-!  pcapt
-!  pmaty
-  pby = first_y
-  DO WHILE (pby .LE. last_y)
-    pcapt = first_y
-    DO WHILE (pcapt .LE. last_y)
-      oby = first_y
-      DO WHILE (oby .LE. last_y)
-        isex = 0
-        DO WHILE (isex .LE. 1)
-          result1 = N_LOG_P(n_comps_ytbsm(pby, pcapt, oby, isex, 1), &
+          result2 = N_LOG_P(n_comps_ytbsm(pby, pcapt, oby, isex, 1), &
 &           pr_po_ytbs(pby, pcapt, oby, isex))
-          tot_lglk = tot_lglk + result1
-          isex = isex + 1
+          tot_lglk = tot_lglk + (result1+result2)
+          oby = oby + 1
         END DO
-        oby = oby + 1
+        pcapt = pcapt + 1
       END DO
-      pcapt = pcapt + 1
+      pby = pby + 1
     END DO
-    pby = pby + 1
+    isex = isex + 1
   END DO
-!  isex
-!  oby
+! oby
 !  pcapt
 !  pmaty
-!  Binomial version could be:
-!  tot_lglk += n_log_p( n_PO_ytb[ pmaty][ pcapt][ oby],
-!       Pr_PO_ytb[ pmaty][ pcapt][ oby]) +
-!     n_log_p( n_comps_ytb[ pmaty][ pcapt][ oby] - n_PO_ytb[ pmaty][ pcapt][ oby],
-!       1-Pr_PO_ytb[ pmaty][ pcapt][ oby]);
+!  isex
+! ////   Half Sibs  //////
+  isex = 0
+  DO WHILE (isex .LE. 1)
+! for (pby = first_y; pby <= last_y; pby++) {  //we'll skip parent birth year since we'll be assuming constant survival of mature
+!s for now 
+! pmaty = pby + amat;
+! we need to give a parents birth year such that they will be mature 
+    oby = first_y + 8
+    DO WHILE (oby .LE. last_y)
+      tmp_pby = oby - 7
+      oby2 = oby + 1
+      DO WHILE (oby2 .LE. last_y)
+        arg1 = 1.0 - pr_hs_ybbs(tmp_pby, oby, oby2, isex)
+        result1 = N_LOG_P(n_hs_comps_yy(oby, oby2), arg1)
+        result2 = N_LOG_P(n_hs_match_yys(oby, oby2, isex), pr_hs_ybbs(&
+&         tmp_pby, oby, oby2, isex))
+        tot_lglk = tot_lglk + (result1+result2)
+        oby2 = oby2 + 1
+      END DO
+      oby = oby + 1
+    END DO
+    isex = isex + 1
+  END DO
+! }
 !  Bin version *without* n_log_p needs if-statements to avoid log(0)
 !  and should use log1p( -Pr_PO_ytb[ pmaty][ pcapt][ oby])
 !  otherwise you can get rounding problems when N is large.
 !  You have been warned !
+! for debugging to see what's going on w/ tot_lglk=NA 
   IF (tot_lglk .NE. tot_lglk) isex = 2
   bearded2__lglk = tot_lglk
   RETURN
@@ -434,7 +498,7 @@ SUBROUTINE BEARDED2__MAKE_DATA_SUMMARIES_CB()
   USE COMMON_B
   IMPLICIT NONE
   INTEGER :: i_samp, j_samp, this_by, this_oby, this_capt, this_pby, &
-& this_maty, this_sex, i_pop
+& this_maty, this_sex, i_pop, i_hs
   INTRINSIC MAX
 !  compute birth years for each sampled animal
   i_samp = 1
@@ -454,6 +518,7 @@ SUBROUTINE BEARDED2__MAKE_DATA_SUMMARIES_CB()
   DO WHILE (i_samp .LT. n_samp)
     j_samp = i_samp + 1
     DO WHILE (j_samp .LE. n_samp)
+! /////   PARENT OFFSPRING /////
 !  In this case, exclude comps where adult caught in year of juve birth...
 !  depends on biol & sampling
 !  First case: i is P, j is O
@@ -478,6 +543,17 @@ SUBROUTINE BEARDED2__MAKE_DATA_SUMMARIES_CB()
 &         this_oby .LT. this_capt .AND. this_oby .NE. this_capt) &
 &       n_comps_ytbsm(this_pby, this_capt, this_oby, this_sex, 0) = &
 &         n_comps_ytbsm(this_pby, this_capt, this_oby, this_sex, 0) + 1
+! //    HALF SIB   /////
+! don't make comparison of individuals caught in same year
+      IF (by(i_samp) .NE. by(j_samp)) THEN
+        IF (by(i_samp) .LT. by(j_samp)) THEN
+          n_hs_comps_yy(by(i_samp), by(j_samp)) = n_hs_comps_yy(by(&
+&           i_samp), by(j_samp)) + 1
+        ELSE
+          n_hs_comps_yy(by(j_samp), by(i_samp)) = n_hs_comps_yy(by(&
+&           j_samp), by(i_samp)) + 1
+        END IF
+      END IF
       j_samp = j_samp + 1
     END DO
     i_samp = i_samp + 1
@@ -520,8 +596,31 @@ SUBROUTINE BEARDED2__MAKE_DATA_SUMMARIES_CB()
     END IF
     i_pop = i_pop + 1
   END DO
+!  i_POP
+  i_hs = 1
+  DO WHILE (i_hs .LT. n_hs)
+    i_samp = isamp_hs(i_hs)
+    j_samp = jsamp_hs(i_hs)
+    IF (by(i_samp) .NE. by(j_samp)) THEN
+      IF (by(i_samp) .LT. by(j_samp)) THEN
+        n_hs_match_yys(by(i_samp), by(j_samp), sex_hs(i_hs)) = &
+&         n_hs_match_yys(by(i_samp), by(j_samp), sex_hs(i_hs)) + 1
+        n_hs_comps_yy(by(i_samp), by(j_samp)) = n_hs_comps_yy(by(i_samp)&
+&         , by(j_samp)) - 1
+      ELSE
+        n_hs_match_yys(by(j_samp), by(i_samp), sex_hs(i_hs)) = &
+&         n_hs_match_yys(by(j_samp), by(i_samp), sex_hs(i_hs)) + 1
+        n_hs_comps_yy(by(j_samp), by(i_samp)) = n_hs_comps_yy(by(j_samp)&
+&         , by(i_samp)) - 1
+      END IF
+    END IF
+    i_hs = i_hs + 1
+  END DO
 END SUBROUTINE BEARDED2__MAKE_DATA_SUMMARIES_CB
 
+! b_mort = exp(next_param());
+! c_mort = exp(next_param());
+! d_mort = exp(next_param());
 !  Hide the next bit from  ADT; for one thing, strings aren't understood...
 !  but there never any reason to AD this, so don't
 !  unpack
@@ -539,8 +638,8 @@ FUNCTION BEARDED2__NEXT_PARAM_CB() RESULT (BEARDED2__NEXT_PARAM)
 END FUNCTION BEARDED2__NEXT_PARAM_CB
 
 !  Differentiation of bearded2__populate in reverse (adjoint) mode:
-!   gradient     of useful results: inv_totfec_ys
-!   with respect to varying inputs: roi n0_f n0_m
+!   gradient     of useful results: s_yij inv_totfec_ys
+!   with respect to varying inputs: roi surv n0_f n0_m
 !  next_param
 !  ---------------------------------------------------------------------------
 !  Fill in pop dyn from parameters. Age-structured version is more interesting
@@ -548,15 +647,23 @@ SUBROUTINE BEARDED2__POPULATE_BPARS(dummy)
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: dummy
   USE COMMON_B
-  INTEGER :: y, isex
+  INTEGER :: y, isex, i, j, iage
+  REAL*8 :: temp
+  REAL*8 :: tempb1_pars
   INTEGER :: ad_count
-  INTEGER :: i
-  INTEGER :: ad_count0
   INTEGER :: i0
-  INTEGER :: ad_count1
+  INTEGER :: ad_count0
   INTEGER :: i1
-  INTEGER :: ad_count2
+  INTEGER :: ad_count1
   INTEGER :: i2
+  INTEGER :: ad_count2
+  INTEGER :: i3
+  INTEGER :: ad_count3
+  INTEGER :: i4
+  INTEGER :: ad_count4
+  INTEGER :: i5
+  INTEGER :: ad_count5
+  INTEGER :: i6
   n_ys(first_y, 0) = n0_f
   n_ys(first_y, 1) = n0_m
   y = first_y + 1
@@ -596,23 +703,73 @@ SUBROUTINE BEARDED2__POPULATE_BPARS(dummy)
     y = y + 1
     ad_count2 = ad_count2 + 1
   END DO
+  CALL PUSHINTEGER4(ad_count2)
+!  Fill survival matrix
+  i = first_y
+  ad_count5 = 0
+  DO WHILE (i .LE. last_y)
+! implies no matches if half sibs born in same year
+    j = i + 1
+    ad_count4 = 0
+    DO WHILE (j .LE. last_y)
+      CALL PUSHINTEGER4(iage)
+      iage = j - i
+      y = first_y
+      ad_count3 = 0
+      DO WHILE (y .LE. last_y)
+! S_yij[y][i][j] = exp(-pow(b_mort*iage, c_mort) - pow(b_mort*iage, 1.0 / c_mort) - d_mort * iage); //could be more efficient if 
+!just defined as a vector and filled here
+        CALL PUSHINTEGER4(y)
+        y = y + 1
+        ad_count3 = ad_count3 + 1
+      END DO
+      CALL PUSHINTEGER4(ad_count3)
+      CALL PUSHINTEGER4(j)
+      j = j + 1
+      ad_count4 = ad_count4 + 1
+    END DO
+    CALL PUSHINTEGER4(ad_count4)
+    CALL PUSHINTEGER4(i)
+    i = i + 1
+    ad_count5 = ad_count5 + 1
+  END DO
+  survb1_pars = 0.0_8
+  DO i6=1,ad_count5
+    CALL POPINTEGER4(i)
+    CALL POPINTEGER4(ad_count4)
+    DO i5=1,ad_count4
+      CALL POPINTEGER4(j)
+      CALL POPINTEGER4(ad_count3)
+      DO i4=1,ad_count3
+        CALL POPINTEGER4(y)
+        IF (.NOT.(surv .LE. 0.0 .AND. (iage .EQ. 0.0 .OR. iage .NE. INT(&
+&           iage)))) survb1_pars = survb1_pars + iage*surv**(iage-1)*&
+&           s_yijb1_pars(y, i, j)
+        s_yijb1_pars(y, i, j) = 0.0
+      END DO
+      CALL POPINTEGER4(iage)
+    END DO
+  END DO
   n_ysb1_pars = 0.0
-  DO i2=1,ad_count2
+  CALL POPINTEGER4(ad_count2)
+  DO i3=1,ad_count2
     CALL POPINTEGER4(y)
     CALL POPINTEGER4(ad_count1)
-    DO i1=1,ad_count1
+    DO i2=1,ad_count1
       CALL POPINTEGER4(isex)
-      n_ysb1_pars(y, isex) = n_ysb1_pars(y, isex) - inv_totfec_ysb1_pars&
-&       (y, isex)/n_ys(y, isex)**2
+      temp = surv*n_ys(y, isex)
+      tempb1_pars = -(inv_totfec_ysb1_pars(y, isex)/temp**2)
+      survb1_pars = survb1_pars + n_ys(y, isex)*tempb1_pars
+      n_ysb1_pars(y, isex) = n_ysb1_pars(y, isex) + surv*tempb1_pars
       inv_totfec_ysb1_pars(y, isex) = 0.0
     END DO
   END DO
   roib1_pars = 0.0_8
   CALL POPINTEGER4(ad_count0)
-  DO i0=1,ad_count0
+  DO i1=1,ad_count0
     CALL POPINTEGER4(y)
     CALL POPINTEGER4(ad_count)
-    DO i=1,ad_count
+    DO i0=1,ad_count
       CALL POPINTEGER4(isex)
       CALL POPREAL4(n_ys(y, isex))
       n_ysb1_pars(y-1, isex) = n_ysb1_pars(y-1, isex) + roi*n_ysb1_pars(&
@@ -662,9 +819,9 @@ SUBROUTINE BEARDED2__SQRT_PROBS_CB(pars)
 END SUBROUTINE BEARDED2__SQRT_PROBS_CB
 
 !  Differentiation of bearded2__unpack in reverse (adjoint) mode:
-!   gradient     of useful results: roi n0_f n0_m
+!   gradient     of useful results: roi surv n0_f n0_m
 !   with respect to varying inputs: pars
-!  i_POP
+!  i_HS
 !  ... NB I don't mind using if's in the constructor, since it's only run once
 !  ... in lglk code, one_if() is faster
 !  make_data_summaries
@@ -680,6 +837,7 @@ SUBROUTINE BEARDED2__UNPACK_BPARS(pars, parsb1_pars)
   INTRINSIC EXP
   REAL*8 :: result1
   REAL*8 :: result1b1_pars
+  REAL*8 :: temp
   INTEGER :: ad_count
   INTEGER :: i0
 !  Surely there is a copy-style function in ADT/C ? No doc of it tho
@@ -702,10 +860,18 @@ SUBROUTINE BEARDED2__UNPACK_BPARS(pars, parsb1_pars)
   CALL PUSHINTEGER4(nextpari)
   CALL PUSHREAL8(result1)
   result1 = BEARDED2__NEXT_PARAM_CB()
-  result1b1_pars = EXP(result1)*n0_mb1_pars
+  CALL PUSHINTEGER4(nextpari)
+  CALL PUSHREAL8(result1)
+  result1 = BEARDED2__NEXT_PARAM_CB()
+  temp = EXP(-result1) + 1.0
+  result1b1_pars = EXP(-result1)*survb1_pars/temp**2
   CALL POPREAL8(result1)
   CALL POPINTEGER4(nextpari)
   temp_parsb1_pars = 0.0
+  CALL BEARDED2__NEXT_PARAM_BPARS(result1b1_pars)
+  result1b1_pars = EXP(result1)*n0_mb1_pars
+  CALL POPREAL8(result1)
+  CALL POPINTEGER4(nextpari)
   CALL BEARDED2__NEXT_PARAM_BPARS(result1b1_pars)
   result1b1_pars = EXP(result1)*n0_fb1_pars
   CALL POPREAL8(result1)
@@ -726,6 +892,9 @@ END SUBROUTINE BEARDED2__UNPACK_BPARS
 !  Differentiation of bearded2__next_param in reverse (adjoint) mode:
 !   gradient     of useful results: temp_pars bearded2__next_param
 !   with respect to varying inputs: temp_pars
+! b_mort = exp(next_param());
+! c_mort = exp(next_param());
+! d_mort = exp(next_param());
 !  Hide the next bit from  ADT; for one thing, strings aren't understood...
 !  but there never any reason to AD this, so don't
 !  unpack
@@ -742,7 +911,7 @@ SUBROUTINE BEARDED2__NEXT_PARAM_BPARS(bearded2__next_paramb1_pars)
   temp_parsb1_pars(nextpari) = temp_parsb1_pars(nextpari) + valb1_pars
 END SUBROUTINE BEARDED2__NEXT_PARAM_BPARS
 
-!  i_POP
+!  i_HS
 !  ... NB I don't mind using if's in the constructor, since it's only run once
 !  ... in lglk code, one_if() is faster
 !  make_data_summaries
@@ -770,6 +939,8 @@ SUBROUTINE BEARDED2__UNPACK_CB(pars)
   n0_f = EXP(result1)
   result1 = BEARDED2__NEXT_PARAM_CB()
   n0_m = EXP(result1)
+  result1 = BEARDED2__NEXT_PARAM_CB()
+  surv = 1.0/(1.0+EXP(-result1))
 END SUBROUTINE BEARDED2__UNPACK_CB
 
 !  Differentiation of n_log_p in reverse (adjoint) mode:
