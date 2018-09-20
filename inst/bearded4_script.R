@@ -1,7 +1,6 @@
 #Includes half-sibs, using constant survival @ age for simulation and estimation
 setwd("c:/users/paul.conn/git/CKMR")
 load("fitbits.RDa")
-setwd("c:/users/paul.conn/git/CKMR/")
 #options(repos=unique(c(mvb="https://markbravington.github.com/Rmvb-repo",getOption('repos'))))
 #install.packages(pkg='mvbutils')
 #install.packages(pkg='debug')
@@ -19,7 +18,7 @@ source("c:/users/paul.conn/git/fishsim/fishsim/R/fishSim_dev.R")
 #make sure to do Debug > attach to process (rsession) in VS .cpp
 Cenv = load_ADT_DLL(folder='c:/users/paul.conn/git/CKMR/bearded2/x64/debug')
 
-set.seed(11111)
+set.seed(11112)
 
 Seal_life_hist = read.csv("c:/users/paul.conn/git/ckmr/sim_inputs.csv",header=T)[1:38,]
 Seal_life_hist[6:38,"S.male"]=Seal_life_hist[6:38,"S.fem"]=0.9  # we'll simplify half sibs by having constant adult survival
@@ -53,7 +52,7 @@ Stable.age = as.numeric(Stable.age/sum(Stable.age))
 
 archive <- make_archive()
 indiv <- makeFounders(pop = 5000, osr = c(0.5, 0.5),stocks=1,maxAge=n.ages,survCurv=Stable.age)
-nyrs = 80
+nyrs = 60
 # 2) population processes and archiving
 firstBreed=6
 Alive = Alive.breed.F = Alive.breed.M = rep(0,nyrs)
@@ -77,13 +76,18 @@ write.csv(archive,file='c:/users/paul.conn/git/CKMR/seal_archive.csv',row.names=
 
 #reformat for use with C++ estimation code
 all_bs <- read.csv( 'c:/users/paul.conn/git/CKMR/seal_archive.csv',stringsAsFactors=FALSE)
+
 names( all_bs) <- cq( ID, SEX, DAD, MUM, BY, DY, STOCK, DA)
+if(sum(all_bs$DA>n.ages)>0){
+  all_bs = all_bs[-which(all_bs$DA>n.ages),]
+}
+all_bs = all_bs[-which(all_bs$BY<1),]  #zap founders
 # DA is Death-Age; BY is Birth-Year; DY is Death-Year
 all_bs$DY <- as.integer( all_bs$DY) # convert "alive" to NA
 
 
 source('c:/users/paul.conn/git/CKMR/R/sim_funcs_Mark.R')
-bs2 <- read_seal_sim( all_bs=archive)
+bs2 <- read_seal_sim( all_bs=all_bs)
 
 # 20 years of sampling--- from last 20 years of simulation
 # Sample from among those animals which died that year
@@ -91,12 +95,33 @@ fmatat=bs2@fmatat
 set.seed( 99)
 #bsamps<- sample_seal_sim( bs2, first_y=31, last_y=50, samp_size=100)
 bsamps<- sample_seal_sim2( bs2, first_y=31, last_y=50, samp_size=100)
+
+
  
 #alternate simulated data adapted from beluga code
 # load("Sim_bearded_simple2.RData")
 
 #par_start = c(as.numeric(log(eigen(Leslie)$values[1])),log(Alive[1]))  
 par_start = c(as.numeric(log(eigen(Leslie)$values[1])),log(2000),log(2000),2.0)  #log(roi),log(N_F),log(N_M),logit(surv)
+
+get_m_data <- function(samps,nyrs,n.ages){
+  m_tas = array(0,dim=c(nyrs,n.ages,2))
+  for(isamp in 1:nrow(samps)){
+    m_tas[samps[isamp,"DY"],samps[isamp,"DA"],1+1*(samps[isamp,"SEX"]=="M")]=m_tas[samps[isamp,"DY"],samps[isamp,"DA"],1+1*(samps[isamp,"SEX"]=="M")]+1
+  }
+  m_tas
+}
+m_tas = get_m_data(bsamps$samps,50,n.ages)
+
+get_m_design <- function(design.pars,nyrs,n.ages,samp.year){
+  # design pars are overall sample size, year eff slope, age eff slope
+  m_tas = P = array(-10000,dim=c(nyrs,n.ages,2))
+  for(iyr in samp.year:nyrs){
+    P[iyr,,1]=P[iyr,,2]=(iyr-samp.year)*design.pars[2]+c(1:n.ages)*design.pars[3]
+  }
+  m_tas=design.pars[1]*exp(P)/sum(exp(P))
+}
+#m_tas = get_m_design(design.pars=c(1500,0.05,-0.05),nyrs=50,n.ages=30,samp.year=31);
 
 #fit_bd_sim <-function(Cenv,sim_data,par_start){
     
@@ -117,6 +142,8 @@ par_start = c(as.numeric(log(eigen(Leslie)$values[1])),log(2000),log(2000),2.0) 
   #sim_data=seal_sample
   #sim_data=seal_sample
   sim_data=bsamps
+  m_tas = m_tas[first_y_sample:last_y,,]
+  
   #sim_data = Out
   first_y = 1
   first_y_sample = min(sim_data$samps$DY)
@@ -135,6 +162,9 @@ par_start = c(as.numeric(log(eigen(Leslie)$values[1])),log(2000),log(2000),2.0) 
   jsamp_HS = c(sim_data$jsamp_MHSP,sim_data$jsamp_PHSP)
   sex_HS = c(rep(0,length(sim_data$isamp_MHSP)),rep(1,length(sim_data$isamp_PHSP)))
   n_HS=length(isamp_HS)
+  n_ages = n.ages
+  n_yrs = last_y
+
   
   ck <- Cenv$create()  #R objects that match C code must be defined above
   
@@ -172,11 +202,19 @@ exp(fit$par[2])*C
 
 getc = function(x)eval(parse(text=paste0("Cenv$get.",x,"(ck)")))
 
+get_P_vector = function(Cenv){
+  c(as.numeric(getc("Pr_PO_ytbs")),as.numeric(getc("Pr_HS_bbs")))
+}
 
-n_hs_comps = getc("n_hs_comps_yy")
-n_hs_match = getc("n_hs_match_yys")
-Pr_HS = getc("Pr_HS_ybbs")
-Syij = getc("S_yij")
+ncomps1 = getc("n_hs_comps_bbs")
+#ncomps2=getc("n_hs_comps_bbs2")
+head(which(ncomps1>0,arr.ind=TRUE))
+#head(which(ncomps2>0,arr.ind=TRUE))
+
+n_hs_comps = getc("n_hs_comps_bbs")
+n_hs_match = getc("n_hs_match_bbs")
+Pr_HS = getc("Pr_HS_bbs")
+Sij = getc("S_ij")
 N_y = getc("N_ys")
 inv_tot_fec = getc("inv_totfec_ys")
 plot(Alive.breed.F[30:50],ylim=c(1000,2000))
@@ -186,7 +224,7 @@ lines(plot.n)
 #### Debugging stuff
 res1 <- Cenv$lglk( ck, par_start)
 
-n_comps=getc("n_comps_ytbsm")
+n_comps=getc("n_comps_ytbs")
 N_y = getc("N_ys")
 
 #Probs = Cenv$get.Pr_PO_ytb(ck)
@@ -248,6 +286,19 @@ for(k in 1:2){
     for(i in 1:50){
       Tmp.index[counter,]=c(i,j,k)
       counter = counter + 1
+    }
+  }
+}
+
+Tmp.index = matrix(0,50*50*50*2,4)
+counter = 1
+for(k in 1:2){
+  for(j in 1:50){
+    for(i in 1:50){
+      for(h in 1:50){
+        Tmp.index[counter,]=c(h,i,j,k)
+        counter = counter + 1
+      }
     }
   }
 }

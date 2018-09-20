@@ -15,5 +15,6 @@ new.adt("c:/users/paul.conn/git/CKMR","Bearded","Bd")
 
 new.adt("c:/users/paul.conn/git/CKMR","Bearded2","Bd",src.templates=file.path(dirname(Sys.which('adt.exe')),'../templates/ckmr'))
 new.adt("c:/users/paul.conn/git/CKMR","spatial","sp",src.templates='c:/users/paul.conn/git/ckmr/template/PO_HSP/')
+new.adt("c:/users/paul.conn/git/CKMR","crap","crp",src.templates='c:/users/paul.conn/git/ckmr/template/PO_HSP/')
 
 library("debug")

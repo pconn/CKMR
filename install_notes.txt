@@ -4,7 +4,16 @@ Need to install:
 -Tapenade
 -Visual Studio C++ 2015 comunity edition
 -Common tools for visual C++ 2015
--Windows 8.1 SDK and Universal CRT SDK
+-Windows 8.1 SDK and Universal CRT SDK 
+(you can do the 3rd and 4th steps by searching for 'visual c++' in visual studio)
+- Java (e.g. jdk-10.0.2) 
+
+Make sure there's a system environment variable called 'Java_Home' pointed at the java directory (e.g. 'c:\progra~1\java\jdk-10.0.2')
+
+Edit Visual Studio 'property manager - Microsoft.Cpp.x64.user' (these provide common access locations for headers across multiple projects).  Under
+Common Properties >> VC++ Directories, change 'Include Directories' to have path to header files (e.g. 'c:\adt\include' and 'c:\adt\include\Rmath').  I
+didn't have to do this before when MVB was helping me, so there's probably some ways to get around this step.  You also need to provide access to several library folders
+(e.g. C:\ADT\lib\x64\debug and C:\ADT\lib\x64\R).
 
 ADT -Need to run new.adt() to set up skeleton for new project
 #first run

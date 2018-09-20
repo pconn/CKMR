@@ -1,9 +1,8 @@
 // ----------------------------------------------------------------------------
-// Bearded2.hpp
 // ----------------------------------------------------------------------------
 
-#ifndef __Bearded2_HPP__
-#define __Bearded2_HPP__
+#ifndef __$(filename)_HPP__
+#define __$(filename)_HPP__
 
 
 #include <adtarrays.hpp>
@@ -12,11 +11,11 @@
 
 // ----------------------------------------------------------------------------
 
-class Bearded2 : public AdtArrays
+class $(classname) : public AdtArrays
 {
 protected:
-  /* AD_LIBNAME Bearded2 */
-  /* AD_ALIAS Bd=DBearded2 */
+  /* AD_LIBNAME $(libname) */
+  /* AD_ALIAS $(short-classname)=D$(classname) */
   /* AUTOINIT 1 */
   // ... IE stuff passed in from R
   int first_y;
@@ -26,19 +25,16 @@ protected:
   int n_samp;  // individuals genotyped
   int n_POP;   // pairs actually found
   int n_HS;    // number of half sibs found
-  int n_ages;  //number of age classes
   int amat;    // age-at-maturity; assumed 100% thereafter
 
   ARRAY_1I tcap/* n_samp */;     // year of capture/sampling
   ARRAY_1I a/* n_samp */;     // age at capture
   ARRAY_1I sex/* n_samp */; // sex (0 = female, 1  = male)
-  ARRAY_3D m_tas/* first_y_sample:last_y, 1:n_ages, 0:1 */;
   ARRAY_1I isamp_POP/* n_POP */;   // sample-index of first animal in this POP
   ARRAY_1I jsamp_POP/* n_POP */;   // ditto for second
   ARRAY_1I isamp_HS/* n_HS */;   // sample-index of first animal in this HS
   ARRAY_1I jsamp_HS/* n_HS */;   // ditto for second
   ARRAY_1I sex_HS/* n_HS */;   // parental sex of half-sibs
-
 
 
 
@@ -50,7 +46,7 @@ protected:
   double N0_m;     // mature male abund in first_y
   double surv;
   //double b_mort;   // b,c,d are reduced additive Weibull parameters (see Choquet et al. 2011 MEE)
-  //double c_mort;Pr_
+  //double c_mort;
   //double d_mort;
 
   int nextpari;
@@ -61,34 +57,31 @@ protected:
 
   ARRAY_1I by/* n_samp */;
   ARRAY_1I ymat_atmost/* n_samp */;
-  ARRAY_4D n_comps_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
-  //ARRAY_4I n_comps_ytbs2 /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
-  ARRAY_4I n_match_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
-
-  ARRAY_3D n_hs_comps_bbs /* first_y:last_y, first_y:last_y, 0:1 */;
-  ARRAY_3I n_hs_match_bbs /* first_y:last_y, first_y:last_y, 0:1 */;
+  ARRAY_5I n_comps_ytbsm /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1, 0:1 */;
+  ARRAY_2I n_hs_comps_yy /* first_y:last_y, first_y:last_y*/;
+  ARRAY_3I n_hs_match_yys /* first_y:last_y, first_y:last_y, 0:1 */;
 
   // now some workspace things
   ARRAY_4D Pr_PO_ytbs/* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */;
+  ARRAY_4D Pr_HS_ybbs/* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */;
   ARRAY_3D Pr_HS_bbs/* first_y:last_y, first_y:last_y,0:1 */;
   ARRAY_4D sqrt_Pr_PO_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */; // design only
-  ARRAY_3D sqrt_Pr_HS_bbs /* first_y:last_y, first_y:last_y, 0:1 */; // design only
   ARRAY_2D inv_totfec_ys /* first_y:last_y, 0:1 */;
   ARRAY_2D N_ys /* first_y:last_y, 0:1 */;
   ARRAY_1D temp_pars/* n_par */;
-  ARRAY_2D S_ij/* first_y:last_y,first_y:last_y */;
+  ARRAY_3D S_yij/* first_y:last_y,first_y:last_y,first_y:last_y */;
 
   // Could have AUTOINIT 2 and AUTODEC 2 and AUTOINIT 3 etc here
   // ... needed iff array dims depend on calculations to be done during constructor
 
-#include "Bd_array_plans.hpp"
+#include "$(short-classname)_array_plans.hpp"
 
 public:
-  Bearded2(
-#include "Bd_constructor_args.hpp"
-  );
+	$(classname)(
+#include "$(short-classname)_constructor_args.hpp"
+		);
 
-  virtual ~Bearded2();
+  virtual ~$(classname)();
 
   // Now you need to manually include the headers of your own functions
   // This error-prone and rather pointless step could be automated... ADR used to !
@@ -99,7 +92,7 @@ public:
   double next_param();
   virtual void populate( int dummy);
   virtual void calc_probs( int dummy);
-  virtual void calc_n_comps( const ARRAY_3D mm_tas/* first_y_sample:last_y, 1:n_ages, 0:1 */);
+
   // Only if FITTING
   virtual double lglk(
       const ARRAY_1D pars/*n_par*/
@@ -119,4 +112,4 @@ double n_log_p(
 
 
 
-#endif  //__Bearded2_HPP__
+#endif  //__$(filename)_HPP__
