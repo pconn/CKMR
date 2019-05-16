@@ -57,24 +57,25 @@ sample_seal_sim <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
   return( returnList( samps, isamp_POP, jsamp_POP))
 }
 
-sample_seal_sim2 <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
+sample_seal_sim2 <- function( bs, first_y, last_y, samp_size, strata_probs = NULL,print.=TRUE) {
   ## Two-sex version
   ## POPs, FSPs, mat & pat HSPs
   ## See "return" at the end for outputs
   ## if print.==TRUE, show simple summaries (ie demographic truth)
   ## EG: set.seed( 99); test <- sample_seal_sim( bs2, first_y=31, last_y=50, samp_size=100)
+  ## 14 Mar 2019: now includes strata specific sampling probs (optional)
   
   most_bs <- bs %where% (BY>0) # founders are born in year "-1"--- zap them
-  
+  if(is.null(strata_probs))strata_probs = rep(1,max(bs$STOCK))
   # most_bs <- most_bs %where% (SEX=='F') # *** FEMALES ONLY *** !!!
   
   ysamp <- first_y:last_y
   
   # I *think* this uses the "right" intercept etc:
-  if( print.) {
-    print( summary( glm( c( fmatat[ first_y:last_y]) ~ I( 0:(last_y-first_y)), family=poisson( link=log))))
-    scatn( 'Mean adult females: %5.2f', mean( fmatat[ first_y:last_y]))
-  }
+  #if( print.) {
+  #  print( summary( glm( c( fmatat[ first_y:last_y]) ~ I( 0:(last_y-first_y)), family=poisson( link=log))))
+  #  scatn( 'Mean adult females: %5.2f', mean( fmatat[ first_y:last_y]))
+  #}
   
   if( length( samp_size)==1) {
     samp_size <- rep( samp_size, length( ysamp))
@@ -89,15 +90,23 @@ sample_seal_sim2 <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
   last_samp_row <- 0
   for( iy in ysamp) {
     die_now <- which( most_bs$DY == iy)
-    samp_now <- sample( die_now, samp_size[ iy], replace=FALSE)
+    samp_now <- sample( die_now, samp_size[ iy],prob=strata_probs[most_bs[die_now,"STOCK"]], replace=FALSE)
     
     new_samp_rows <- last_samp_row + (1:samp_size[iy])
     samps[ new_samp_rows,] <- most_bs[ samp_now,]
     last_samp_row <- tail( new_samp_rows, 1)
   }
   
+  #alternate for testing below
+  #mum_rows = which(samps$ID %in% samps$MUM)  #these rows are the mothers
+  #isamp_MOP = which(samps$MUM %in% samps$ID[mum_rows])  #can be > # mothers since mother can produce >1 o
+  #jsamp_MOP = rep(0,length(isamp_MOP))
+  #for(i in 1:length(isamp_MOP))jsamp_MOP[i]=which(samps$ID==samps[isamp_MOP[i],"MUM"])
+  
+  
   # could do this:
   # mumids <- with( samps, ID %that.are.in% MUM) # or use base::intersect() if you care nothing for clarity
+  
   mum_rows <- match( samps$ID, samps$MUM, 0) # NB one mum can have several offspring ...
   mumids <- samps$ID[ mum_rows>0]            # but these are unique; only the first offo of each mum
   
@@ -178,7 +187,7 @@ sample_seal_sim2 <- function( bs, first_y, last_y, samp_size, print.=TRUE) {
   # Could also do GGPs; NFN
   
   
-  samps <- samps[ cq( ID, SEX, DY, DA)]
+  samps <- samps[ cq( ID, SEX, DY, DA, STOCK)]
   # samps$DY is "tcap"
   # samps$DA is "a"
   return( returnList(
@@ -213,29 +222,29 @@ read_seal_sim <- function( filename=NULL, all_bs=NULL) {
   # ... because a Founder that does not die will never have its age recorded !
   # Fudge is OK here
   
-  all_bs <- within( all_bs, {
-    DY <- as.integer( DY) # convert "alive" to NA
-    BY[ BY < 1] <- NA
-    BY <- ifelse( is.na( BY), DY - DA, BY) # should get all of them...
+  #all_bs <- within( all_bs, {
+  all_bs$DY <- as.integer( all_bs$DY) # convert "alive" to NA
+  all_bs$BY[ all_bs$BY < 1] <- NA
+  all_bs$BY <- ifelse( is.na( all_bs$BY), all_bs$DY - all_bs$DA + 1, all_bs$BY) # should get all of them...
     
     # DY2: DY if known, or "well into the future" if still alive at the end
-    DY2 <- ifelse( !is.na( DY),
-                   DY,
-                   max( DY, na.rm=TRUE) + 10*max( DA, na.rm=TRUE)) # IE in the future
+  all_bs$DY2 <- ifelse( !is.na( all_bs$DY),
+                        all_bs$DY,
+                   max( all_bs$DY, na.rm=TRUE) + 10*max( all_bs$DA, na.rm=TRUE)) # IE in the future
     
-    mumab <- BY - BY[ match( MUM, ID, NA)] # 6+, or NA
-    mumdy <- DY[ match( MUM, ID, NA)]
-  })
+    mumab <- all_bs$BY - all_bs$BY[ match( all_bs$MUM, all_bs$ID, NA)] # 6+, or NA
+    mumdy <- all_bs$DY[ match( all_bs$MUM, all_bs$ID, NA)]
+  #})
   
   
-  AMAT <- min( all_bs$mumab, na.rm=TRUE) # deduce...
+  AMAT <- min( mumab, na.rm=TRUE) # deduce...
   
   ########### Summaries of "truth"
   
-  # In *THIS* dataset, you are allowed to breed successfully even if you die that year...
+  # In *THIS* dataset, you are *NOT* allowed to breed successfully even if you die that year...
   # ... hence ">=" next
   all_bs <- within( all_bs, {
-    MATY <- ifelse( DY2 >= BY + AMAT, BY+AMAT, NA)
+    MATY <- ifelse( DY2 > BY + AMAT, BY+AMAT, NA)
   })
   
   nogaps <- function( ints, limits=range( ints, na.rm=TRUE)) {
@@ -265,7 +274,7 @@ read_seal_sim <- function( filename=NULL, all_bs=NULL) {
   fmat_bs <- all_bs %where% ( (SEX=='F') & !is.na( MATY))
   fmat_bs <- within( fmat_bs, {
     MATY <- pmax( 1, pmin( MATY, last_y+1))
-    GONE <- pmin( DY2+1, last_y+1)
+    GONE <- pmin( DY2+1, last_y+1)   #do we need +1 here anymore since can't breed in same year as dead?
   })
   
   ftab <- with( fmat_bs, table(
@@ -274,9 +283,6 @@ read_seal_sim <- function( filename=NULL, all_bs=NULL) {
   fmatby <- cumsum( rowSums( ftab))
   fdeadby <- cumsum( colSums( ftab))
   fmatat <- fmatby - fdeadby[ names( fmatby)]
-  
-  
-  # Mortality rate is verrry high. Also NB births allowed in female death year
   
   
   fmatat <- offarray( fmatat, first=first_y, last=last_y)

@@ -1,0 +1,350 @@
+\documentclass[serif,mathserif]{beamer}
+\usepackage{amsmath, amsfonts, epsfig, xspace, color, colortbl,natbib,xcolor}
+\usepackage{algorithm,algorithmic}
+\usepackage{animate}
+%\usepackage{pstricks,pst-node}
+%\usepackage{multimedia}
+%\usepackage{movie15}
+\usepackage[normal,tight,center]{subfigure}
+\setlength{\subfigcapskip}{-.5em}
+%\usepackage{beamerthemesplit}
+%\usetheme{lankton-keynote}
+
+%%%
+% PRELIMINARY FORMATTING
+%%%
+\renewcommand\sfdefault{phv}
+\renewcommand\familydefault{\sfdefault}
+\usetheme{default}
+\usepackage{color}
+\useoutertheme{default}
+\usepackage{texnansi}
+\usepackage{marvosym}
+\definecolor{bottomcolour}{rgb}{0.32,0.3,0.38}
+\definecolor{middlecolour}{rgb}{0.08,0.08,0.16}
+\definecolor{noaaturq}{RGB}{2,171,216}
+\definecolor{noaablue}{RGB}{20,21,127}
+\setbeamerfont{title}{size=\huge}
+\setbeamercolor{structure}{fg=gray}
+\setbeamertemplate{frametitle}[default]%[center]
+\setbeamercolor{normal text}{bg=black, fg=white}
+\setbeamercolor{block title}{parent=normal text, bg=noaaturq}%noaablue!60!white}
+\setbeamercolor{block body}{parent=normal text, use=block title,bg=noaablue}%block title.bg!50!black}
+\setbeamertemplate{background canvas}[vertical shading]
+[bottom=bottomcolour, middle=middlecolour, top=black]
+\setbeamertemplate{items}[circle]
+\setbeamerfont{frametitle}{size=\huge}
+\setbeamertemplate{navigation symbols}{} %no nav symbols
+\setbeamertemplate{blocks}[rounded]
+\graphicspath{{c:/users/paul.conn/git/STabundance/ISEC_presentation}}
+
+%\usecolortheme{seahorse}
+
+
+\begin{document}
+
+\frame{
+\centering
+\renewcommand{\baselinestretch}{1.8}\normalsize
+{\LARGE \textcolor{noaaturq}{Preferential sampling in species distribution models}}\\
+\bigskip\bigskip
+\renewcommand{\baselinestretch}{1.25}\normalsize
+Paul B. Conn\\
+\footnotesize \textcolor{lightgray}{\em Marine Mammal Lab, NOAA Alaska Fisheries Science Center, Seattle, WA }\\
+\textcolor{lightgray}{Email: paul.conn@noaa.gov}\\
+\bigskip\bigskip
+\textcolor{lightgray}{PSAW II\\
+La Jolla, San Diego\\
+February 12, 2019}\\	
+\vspace*{\fill}
+\begin{figure}
+%	%\subfigure{\includegraphics[height=2cm]{UAFlogo.png}}
+%	\hspace*{\fill}
+%	\subfigure{\includegraphics[height=2cm]{noaa_logo.png}}
+\hspace{\fill}
+\includegraphics[height=1.5cm]{NOAA-logo.pdf}
+\end{figure}
+}
+
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{Outline}
+  \begin{enumerate}
+    \item Definitions
+    \item Models
+    \item Simulations
+    \item Seals
+    \item Birds
+    \item Final thoughts
+  \end{enumerate}
+\end{frame}
+
+
+
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{Definitions}
+  \textcolor{noaaturq}{\textbf{What is preferential sampling?}} \\ \pause
+
+  When a spatial process of interest and the locations chosen for sampling are conditionally dependent \textit{given} modeled covariates. \pause
+
+\vspace{0.5cm}
+
+\textcolor{noaaturq}{Data} (counts, presence/absence): ${\bf Y} = \{ Y_1, Y_2, \hdots, Y_n \}$ \pause
+
+\vspace{0.25cm}
+
+\textcolor{noaaturq}{Latent spatial process} (abundance, occupancy): ${\bf Z} = \{ Z_1, Z_2, \hdots, Z_S \}$ \pause
+
+\vspace{0.25cm}
+
+\textcolor{noaaturq}{Covariates}: ${\bf X} = \{ {\bf x}_1, {\bf x}_2, \hdots, {\bf x}_S \}$ \pause
+
+\vspace{0.25cm}
+
+\textcolor{noaaturq}{Sample inclusion indicator}: ${\bf R} = \{ R_1, R_2, \hdots, R_S \}$ \pause
+
+\begin{block}{Definition: Preferential sampling (after \citet{DiggleEtAl2010}, \citet{PatiEtAl2011})}
+      Preferential sampling exists if $[{\bf R},{\bf Z} | {\bf X}] \neq [{\bf R}|{\bf X}][{\bf Z}|{\bf X}]$
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{Definitions: pop quiz!}
+  \vspace{0.75cm}
+
+  \textcolor{noaaturq}{Example 1} An investigator (or volunteer) uses prior knowledge of animal density to select locations for sampling. \\ \pause
+
+  \vspace{0.5cm}
+
+  \textcolor{noaaturq}{Example 2} An investigator is more likely to sample sites close to a base of operations, and animal densities there are higher (or lower) than expected based on explanatory covariates alone.
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Models}
+  \vspace{0.75cm}
+
+  Most published work on preferential sampling in continuous spatial domain w/ Gaussian processes. \pause
+
+ \vspace{0.25cm}
+  Here, I consider a species distribution model for count data on a discrete spatial domain.\\
+  \vspace{0.25cm}
+   \textcolor{noaaturq}{Latent abundance }:
+   \begin{eqnarray*}
+      Z_i  & = & A_i \mu_i. \\
+   \log(\mu_i)  & = & \beta_0 + {\bf x}_i \boldsymbol{\beta}+\delta_i \\
+   \boldsymbol{\delta} & \sim & \textrm{MVN}(0,\boldsymbol{\Sigma})
+   \end{eqnarray*} \pause
+   \textcolor{noaaturq}{Observation model }:
+   \begin{eqnarray*}
+      Y_i  & \sim & \textrm{Poisson}(Z_i p_i)
+   \end{eqnarray*}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Preferential sampling model}
+  \textcolor{noaaturq}{Sample inclusion indicator}:
+    \begin{eqnarray*}
+      R_i & \sim & \textrm{Bernoulli}(\nu_i)\\
+    \textrm{logit}(\nu) & = & \beta_0^* + {\bf X}^* \boldsymbol{\beta}^*+\boldsymbol{\eta}+{\bf B} \boldsymbol{\delta} \\
+      \boldsymbol{\eta} & \sim & \textrm{MVN}(0,\boldsymbol{\Sigma}^*)
+    \end{eqnarray*} \pause
+
+    \vspace{0.25cm}
+
+    Note that $\boldsymbol{\delta}$ random effects are also included in the latent abundance model, providing for possible dependence. \pause
+
+    \vspace{0.5cm}
+
+    The matrix ${\bf B}$ describes preferential sampling.  We set  ${\bf B} = b{\bf I}$ (if one is brave, more sophistication possible). \pause
+
+     \vspace{0.5cm}
+
+    \textcolor{noaaturq}{Total abundance posterior prediction}:
+    $\tilde{N} = \sum_i Z_i$
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Simulations}
+  \textcolor{noaaturq}{Rationale}:
+  \begin{enumerate}
+  \item See what effects preferential sampling
+  has on abundance estimation
+  \item See how well our modeling framework does in alleviating bias
+  \end{enumerate} \pause
+  \begin{columns}[c]
+\column{2in}
+  Three simulation scenarios:
+  \begin{itemize}
+    \item No preferential sampling,
+    \item moderate preferential sampling,
+    \item pathological preferential sampling
+   \pause
+   \end{itemize}\column{2in}
+\framebox{\includegraphics[width=2in]{sim_R.pdf}}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Simulations}
+  \begin{columns}[c]
+\column{1.5in}
+\begin{itemize}
+\item Matern covariance structure
+\item Laplace approximation via Template Model Builder \citep{KristensenEtAl2016}
+\item 500 simulations per design point
+\item Details in \cite{ConnEtAl2017}
+\end{itemize}
+\column{2.8in}
+\framebox{\includegraphics[width=2.8in]{Pref_samp_sim_maps.pdf}}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Simulations}
+\framebox{\includegraphics[width=3in]{bias.pdf}}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Seals}
+Ice-associated seal aerial surveys - Bering Sea 2012
+\begin{columns}[c]
+\column{2in}
+\framebox{\includegraphics[width=2in]{Scenario_H5.pdf}} \pause
+\column{2in}
+\framebox{\includegraphics[width=2in]{BOSS2012_Effort.jpg}} \pause
+\end{columns}
+\vspace{.25in}
+ \textcolor{noaaturq}{Preferential sampling?}
+%\begin{columns}[c]
+%\column{2in}
+%\framebox{\includegraphics[width=2in]{ice_april1.pdf}}
+%\column{2in}
+%\end{columns}
+\end{frame}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Seals}
+  \begin{columns}[c]
+\column{2in}
+\begin{itemize}
+\item Limit to aerial survey counts obtained in one week period (April 10-16, 2012)
+\item Ignore multiple detection process vagaries
+\item Maximum coverage of strip transects in each 625km$^2$ cell is 3.3\%
+\end{itemize}
+\column{2.5in}
+\framebox{\includegraphics[width=2.5in]{Bearded_counts.pdf}} \pause
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Seals}
+  \begin{columns}[c]
+\column{1.5in}
+\framebox{\includegraphics[width=1.5in]{bearded_pic.jpg}} \pause
+\column{3in}
+\begin{itemize}
+\item 4 models fit to bearded seal counts \pause
+\item Covariates: yes/no \pause
+\item Preferential sampling parameter $b$ estimated: yes/no \pause
+\item Covariates modeled:
+    \begin{itemize}
+     \item \textcolor{noaaturq}{sea ice concentration} (linear + quadratic)
+     \item \textcolor{noaaturq}{distance from southern ice edge} (linear) \pause
+     \end{itemize}
+\item Same TMB estimation procedure as in simulations
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Seals}
+\begin{tabular}{lccccc}
+  \hline
+  Model & LogL & k & CV-MSPE (SE)& $\Delta \textrm{AIC}$ & $\hat{N}$(SE) \\
+  \hline
+ $M_{cov=0,b=0}$ & -852.7 & 5 & 87.2 & 99.1 & 70738 (6988) \\
+ $M_{cov=1,b=0}$ & -847.6 & 12 & 88.3 & 103.0 & 66989 (20374) \\
+ $M_{cov=1,b=1}$ & -795.1 & 13 & 105.3 & 0.0 & 40656 (3664) \\
+ $M_{cov=0,b=1}$ & -803.0 & 6 & 116.2 & 1.9 & 43232 (2778) \\
+  \hline
+\end{tabular} \pause
+
+\vspace{.3cm}
+
+Comments:
+\begin{itemize}
+  \item Difference in support based on model selection criterion  \pause
+  \item Model with $b$ estimated had $\hat{b} > 9.0$! \pause
+  \item Conclusion: preferential sampling model unstable; use model w/ $b=0$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Birds}
+Peregrine falcon presence-absence surveys at sites in the French Jura Alps
+
+\vspace{.5cm}
+
+\colorbox{white}{\includegraphics[width=3.2in]{peregrine_presence.png}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Birds}
+Peregrine estimates
+
+\vspace{.5cm}
+
+\colorbox{white}{\includegraphics[width=3.2in]{peregrine_estimates.png}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Final thoughts}
+  \begin{enumerate}
+    \item Model-based inference is not a free pass \pause
+    \item It would be really nice not to go to such modeling elaborations: include design-based protocols in design! \pause
+    \item Include covariates and stratification where possible \pause
+    \item Can use methods such as those here for diagnosis of preferential sampling and possible bias reduction \pause
+    \item Would be interesting to see what happens when spatial autocorrelation is represented through first order structure (e.g., GAMs) \pause
+    \item Applications in other areas: e.g. CPUE standardization in fisheries, time series
+  \end{enumerate}
+\end{frame}
+
+ \section{End notes}
+  \begin{frame}
+  \frametitle{}
+  {\Huge Questions?}
+
+  \vspace{0.5cm}
+
+  \textcolor{noaaturq}{Acknowledgments} \\
+  \begin{itemize}
+  \item Coauthors: Jim Thorson, Devin Johnson.
+  \item Bird plots from Marc K$\acute{\textrm{e}}$ry, Swiss Ornithological Institute
+  \item Seal field research conducted by PEP program at NOAA/AFSC/MML, funded by NOAA and BOEM.
+  \end{itemize}
+  \vspace{0.5cm}
+   \textcolor{noaaturq}{References}
+ \bibliographystyle{plainnat}
+ {\footnotesize
+  \bibliography{master_bib}}
+
+ \end{frame}
+
+\end{document}

@@ -1,0 +1,150 @@
+% besdoc.tex V1.0, 17 March 2011
+
+\documentclass[times,mee,doublespace,]{besauth2}
+%%\documentclass[times,mee,]{besauth}
+
+\newcommand{\journalnamelc}{British Ecological Society}
+\newcommand{\journalabb}{British Ecological Society}
+\newcommand{\journalclassshort}{BES}
+%%\newcommand{\journalname}{British Ecological Society}
+\usepackage{epstopdf,comment}
+
+\usepackage{moreverb}
+
+\usepackage[colorlinks,bookmarksopen,bookmarksnumbered,citecolor=red,urlcolor=red]{hyperref}
+
+
+\usepackage{lineno}
+
+\newcommand\BibTeX{{\rmfamily B\kern-.05em \textsc{i\kern-.025em b}\kern-.08em
+T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\bibpunct[; ]{(}{)}{;}{}{}{,}
+
+\def\volumeyear{2015}
+\def\VOC{VO}
+
+\begin{document}
+
+\begin{center} \bf {\large Applying close-kin mark-recapture in dispersal-limited populations with spatially biased sampling}
+
+\rm
+
+\vspace{0.7cm}
+Paul B. Conn$^{1,*}$, Jay M. Ver Hoef$^2$, Mark V. Bravington$^1$
+\end{center}
+\vspace{0.5cm}
+
+\rm
+\small
+
+
+$^1$ Marine Mammal Laboratory, Alaska Fisheries Science Center, NOAA, National Marine Fisheries Service, 7600 Sand Point Way NE, Seattle, WA 98115 USA; $^2$ CSIRO Marine Lab, GPO Box 1538, Hobart 7001, TAS, Australia
+
+$^*$paul.conn@noaa.gov
+
+\large
+\bigskip
+\centerline{Appendix S1: Calculation of a spatially structured close-kin mark-recapture joint pseudo-likelihood}
+\bigskip
+\small
+
+\linenumbers
+
+\def\VAR{{\rm Var}\,}
+\def\COV{{\rm Cov}\,}
+\def\Prob{{\rm P}\,}
+
+\begin{flushleft}
+
+\raggedbottom
+
+In this appendix, describe how to calculate the joint pseudo-likelihood for our model incorporating spatial structure.
+
+\section{Spatial population dynamics model}
+
+Let $N_{a,t,g,s}$ give the number of age $a$ and sex $g$ animals that are in location $s$ at time $t$.  We initialize the expected abundance in the first year of the model as a function of an unknown parameter $R_0$ and a spatial index $I_s$.  In particular, we set $N_{0,1,g,s} = 0.5 \exp(R_0) I_s$.  For this paper, we assume the spatial index is constant with $I_s = 0.01$ (i.e. uniform abundance over the landscape).  As with the naive model, a stable age distribution is assumed in each cell, so that $N_{a+1,1,g,s} = N_{a,1,g,s} \phi_{a,1,g,s}$ for $a>0$.  Non-juvenile (i.e., $a>0$) abundance in future years ($t>1$) is calculated using a product of movement and survival matrices: ${\bf N}_{t+1,g} = {\bf N}_t \bfpsi_$
+\subsubsection*{Preferential sampling model development}
+
+We focus here on a discrete spatial domain; extensions to point process models in continuous space should be relatively straightforward.  In particular, we suppose that the investigator intending to fit a SDM to animal encounter data breaks their study area up into $S$ survey units (label these $U_1, U_2, \hdots, U_S$), of which $n$ are selected for sampling (call the set of sampled locations $\mathcal{S}$).
+Each survey unit $i$ is assigned a vector of covariates, ${\bf x}_i$, and an indicator $R_i$ that takes on the value 1.0 if survey unit $i$ is sampled (i.e. if $U_i \in \mathcal{S}$), and is 0 otherwise.  Let $Z_i$ denote the state variable of interest in cell $i$ (e.g., occupancy, abundance), and let $Y_i$ denote observations made in cell $i$.  In some cases, observations may be equivalent to the state variable in sampled cells (i.e. when detection probability is 1.0).  In others, an observation model $[Y_i | Z_i, \boldsymbol{\theta}]$ relating $Y_i$ to the underlying process of interest will be required, where $\boldsymbol{\theta}$ are nuisance parameters describing detection.  For instance, for survey counts in our simulation study and in the bearded seal example, we set
+\begin{eqnarray*}
+  [Y_i | Z_i, \boldsymbol{\theta}] & = & \textrm{Binomial}(Z_i, A_i p_i),
+\end{eqnarray*}
+where $A_i$ gives the proportion of survey unit $i$ that is sampled and $p_i$ is a detection probability ($p_i$ is set to 1.0 for the simulation study and an informative prior distribution is specified in the bearded seal example).
+
+\hspace{0.5in} We express variation in $Z_i$ generically as
+\begin{eqnarray}
+  \label{eq:process}
+  [Z_i|\mu_i] & = & f(g^{-1}(\mu_i)),
+\end{eqnarray}
+where $f()$ is a probability mass function (e.g., Poisson for count data, Bernoulli for occupancy), $g()$ is a link function (e.g. probit or logit for occupancy, log for count data), and $\mu_i$ is a link-scale intensity value.  In applications described in this paper, we specify this intensity as
+\begin{eqnarray}
+\mu_i & = & \beta_0 + {\bf x}_i \boldsymbol{\beta}+\delta_i,
+ \label{eq:mu}
+\end{eqnarray}
+where $\beta_0$ is an intercept, ${\bf x}_i$ is a vector of covariates used to explain variation in abundance (here indexed by the site, $i$), and $\boldsymbol{\delta}=\{ \delta_1,\delta_2,\hdots,\delta_S \}$ are spatially autocorrelated random effects.
+
+\hspace{0.5in} We model the site selection probabilities in the same manner.  First, we write $R_i$, as
+\begin{eqnarray}
+ \label{eq:R}
+  [R_i|\nu_i] & = & \text{Bernoulli}(h^{-1}(\nu_i)),
+\end{eqnarray}
+where $h()$ denotes a link function appropriate for binary data (e.g. logit, probit).  We then write the intensity for this model as
+\begin{eqnarray}
+  \label{eq:nu}
+  \nu_i & = & \beta_0^* + {\bf x}_i^* \boldsymbol{\beta}^*+\eta_i+{\bf B} \delta_i.
+\label{eq:nu}
+\end{eqnarray}
+Here, $\beta_0^*$ is an intercept, ${\bf x}_i^*$ is a vector of covariates (in practice, these can be the same or different from ${\bf x}_i$), and $\boldsymbol{\eta}=\{ \eta_1,\eta_2,\hdots,\eta_S \}$ are spatially autocorrelated random effects.  The connection between the two models (eqs. \ref{eq:mu} and \ref{eq:nu}) is the reliance of both on $\delta_i$.  In eq. \ref{eq:nu}, the matrix ${\bf B}$ describes this relationship.  Previous preferential sampling models in the statistical literature have set $\textbf{B} = b \textbf{I}$, where $\textbf{I}$ is an identity matrix and $b$ is a parameter to be estimated.  This is the approach we take in simulation study and in several of the models fit to real data.  Another approach is to construct $\textbf{B}$ so it changes smoothly in space, as in \citep{RoyleBerliner1999}.  In this manner, the degree of preferential sampling could vary across the landscape; presumably, one would need fairly rich data to be able to model a spatially varying relationship.
+
+\hspace{0.5in} We have yet to specify a model for spatial autocorrelation.  For analyses in this paper, we model mean-zero spatial random effects (i.e., the $\delta_i$ and $\eta_i$) for each site $i$ as multivariate normal:
+\begin{eqnarray*}
+  \boldsymbol{\delta} & \sim & MVN(\textbf{0},\boldsymbol{\Sigma}_{\delta}), \text{ and} \\
+  \boldsymbol{\eta} & \sim & MVN(\textbf{0},\boldsymbol{\Sigma}_{\eta}),
+\end{eqnarray*}
+where $\boldsymbol{\Sigma}_{\lambda}$ and $\boldsymbol{\Sigma}_{\eta}$ are covariance matrices.  As is typical of spatial models in statistics, we allow the magnitude of spatial autocorrelation to decrease as a function of the distance between survey units.  In particular, we use the well known Mat\'{e}rn covariance function to model covariance as a function of distance.  In addition to the distances between survey units (which we calculate relative to survey unit centroids), the Mat\'{e}rn covariance function uses a range (or scale) parameter $\kappa$, a precision parameter $\tau$ (inverse marginal variance), and a smoothness parameter to model covariance.  For analyses in this paper, we set the smoothness parameter to 1.0 and treat $\kappa$ and $\tau$ as parameters to be estimated.  To improve computational efficiency, we use a Gaussian Markov random field (GMRF) representation of the underlying Gaussian field \citep{LindgrenEtAl2011}, as described by \citet{ThorsonEtAl2015} (Appendix B).
+
+\hspace{0.5in} To conduct statistical analysis of the preceding models, we use maximum marginal likelihood as implemented in Template Model Builder \citep[TMB; ][]{KristensenEtAl2016}. Interfaced with the R programming environment, the TMB software uses a Laplace approximation to integrate out random effects, and a bias correction algorithm \citep{TierneyEtAl1989,ThorsonKristensen2016} is used to obtain abundance estimates and standard errors that properly account for nonlinear transformations of random effects.  Requisite R and TMB code will be published to a publicly accessible repository upon acceptance, and is also available at \url{https://github.com/NMML/pref_sampling/}.
+
+\subsubsection*{Simulation study details}
+
+For each of 500 simulations, we performed the following steps:
+
+\begin{enumerate}
+  \item Generate a spatially autocorrelated covariate over a $25 \times 25$ grid, where the covariate at grid cell $i$, $X_i$, is generated via a multivariate normal distribution:
+      \begin{eqnarray}
+        \textbf{X} & \sim & \textrm{MVN} (\textbf{0},\boldsymbol{\Sigma}).
+        \label{eq:cov}
+      \end{eqnarray}
+      An isotropic, Gaussian covariance structure is used for $\boldsymbol{\Sigma}$, where the $i$th row and $j$th column of $\boldsymbol{\Sigma}$ is set to $\Sigma_{ij}=\sigma^2 \exp{-(d_{ij}/s)^2}$, where $d_{ij}$ is the distance between the centroid of grid cell $i$ and grid cell $j$, $\sigma$ is a standard deviation (here, set to 1.0), and $s$ is a scale parameter (here, set to 5.0).
+  \item Generate true abundance in each survey unit (grid cell), $N_i$, as a function of the covariate from step 1, together with additional spatially autocorrelated error.  We generate a vector of such abundances as
+      \begin{eqnarray}
+        N_i & \sim & \textrm{Poisson}(\exp(\beta_0 + X_i \beta_1 + \delta_i)),
+      \end{eqnarray}
+      where the $\boldsymbol{\delta}$ are drawn in an identical manner to $\textbf{X}$ in step 1.  We set $\beta_0 = 2.0$ and drew $\beta_1 \sim \textrm{Uniform}(-0.5,0.5)$ for each simulation.
+  \item For each simulation, we selected 50 grid cells for sampling (i.e., set $R_i = 1.0$) according to 3 alternative survey configurations.  Each survey configuration, grid cells were drawn randomly without replacement, where the probability of sampling cell $i$ is proportional to
+      \begin{equation*}
+        \exp(X_i \beta_1^*  + \eta_i + b \delta_i).
+      \end{equation*}
+      Here, $\eta_i$ is a spatially autocorrelated random effect drawn in an identical manner to $\textbf{X}$ in step 1, and $b$ describes the level of preferential sampling.  Three levels are used: $b=0$, which makes the sampling model conditionally independent from the abundance process (i.e., no preferential sampling); $b=1$, which induces some dependence between the abundance and sampling process (i.e., moderate preferential sampling); $b=3$ which makes cells of high abundance much more likely to be sampled than low abundance cells (i.e., pathological preferential sampling).   We drew $\beta_1^* \sim \textrm{Uniform}(-0.5,0.5)$ for each simulation replicate.  An illustration of the consequences of different survey configurations is provided in Fig. 2 of the main manuscript.
+  \item For each of the 3 sampling configurations, we generated a count dataset.  In each case, we generated a count $Y_i$ for each cell selected for sampling (i.e., for cells where $R_i=1.0$) according to
+      \begin{eqnarray*}
+        Y_i & \sim & \textrm{Binomial}(N_i,A).
+      \end{eqnarray*}
+      Here, $A$ represents the portion of the grid cell that is surveyed, and was set to 0.5 for all simulations and grid cells.
+  \item For each count data set, we fitted 2 different estimation models in TMB (see \textit{Preferential sampling model development}).  In the first, the preferential sampling parameter $b$ was fixed to 0.0 (thus in effect assuming no preferential sampling).  In the second, $b$ was estimated.
+  \item For each combination of simulation replicate, survey configuration, and estimation model, we recorded relative bias with respect to total estimated abundance, $\hat{N} = \sum \hat{N_i}$, where a bias correction algorithm \citep{TierneyEtAl1989,ThorsonKristensen2016} is used to obtain abundance estimates and standard errors that properly account for nonlinear transformations of random effects.  This bias correction is also used to obtain abundance estimates in the bearded seal example.
+\end{enumerate}
+
+
+\bibliographystyle{bes}
+\bibliography{master_bib}
+
+\pagebreak
+
+
+\end{flushleft}
+\end{document}
+
+%http://www.plosone.org/article/info:doi/10.1371/journal.pone.0036527

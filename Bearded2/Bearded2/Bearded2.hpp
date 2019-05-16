@@ -28,6 +28,13 @@ protected:
   int n_HS;    // number of half sibs found
   int n_ages;  //number of age classes
   int amat;    // age-at-maturity; assumed 100% thereafter
+  double a_mean; 
+  double b_mean;
+  double c_mean;
+  double haz_mult;
+  double wt_a;  //weight on RAW 'a' prior
+  double wt_b; //weight on RAW 'b' prior
+  double wt_c;   //ibid
 
   ARRAY_1I tcap/* n_samp */;     // year of capture/sampling
   ARRAY_1I a/* n_samp */;     // age at capture
@@ -38,20 +45,15 @@ protected:
   ARRAY_1I isamp_HS/* n_HS */;   // sample-index of first animal in this HS
   ARRAY_1I jsamp_HS/* n_HS */;   // ditto for second
   ARRAY_1I sex_HS/* n_HS */;   // parental sex of half-sibs
-
-
-
+  ARRAY_2D Fec_as/* 1:n_ages,0:1 */; //Fecundity by age and sex (# expected female offspring)
 
 
   /* AUTODEC 1 */
   // Things calculated in C
-  double roi;     // proportional Rate Of Increase (ie 1 means constant)
-  double N0_f;      // mature female abund in first_y
-  double N0_m;     // mature male abund in first_y
-  double surv;
-  //double b_mort;   // b,c,d are reduced additive Weibull parameters (see Choquet et al. 2011 MEE)
-  //double c_mort;Pr_
-  //double d_mort;
+  double R0;     // # new recruits of 1 sex at time 1 (assume 50:50 sex ratio)
+  double a_haz;      // a,b,c are reduced additive Weibull parameters (see Choquet et al. 2011 MEE)
+  double b_haz;     // mature male abund in first_y
+  double c_haz;
 
   int nextpari;
 
@@ -64,19 +66,22 @@ protected:
   ARRAY_4D n_comps_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
   //ARRAY_4I n_comps_ytbs2 /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
   ARRAY_4I n_match_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
+  ARRAY_4D exp_match_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y, 0:1 */;
 
   ARRAY_3D n_hs_comps_bbs /* first_y:last_y, first_y:last_y, 0:1 */;
   ARRAY_3I n_hs_match_bbs /* first_y:last_y, first_y:last_y, 0:1 */;
+
 
   // now some workspace things
   ARRAY_4D Pr_PO_ytbs/* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */;
   ARRAY_3D Pr_HS_bbs/* first_y:last_y, first_y:last_y,0:1 */;
   ARRAY_4D sqrt_Pr_PO_ytbs /* first_y:last_y, first_y:last_y, first_y:last_y,0:1 */; // design only
   ARRAY_3D sqrt_Pr_HS_bbs /* first_y:last_y, first_y:last_y, 0:1 */; // design only
-  ARRAY_2D inv_totfec_ys /* first_y:last_y, 0:1 */;
-  ARRAY_2D N_ys /* first_y:last_y, 0:1 */;
+  ARRAY_3D rel_repro_yas /* first_y:last_y,1:n_ages, 0:1 */;
+  ARRAY_3D N_yas /* first_y:last_y,1:n_ages, 0:1 */;
+  ARRAY_3D N_yas_breed /* first_y:last_y,1:n_ages, 0:1 */;
   ARRAY_1D temp_pars/* n_par */;
-  ARRAY_2D S_ij/* first_y:last_y,first_y:last_y */;
+  ARRAY_3D S_aij/* 1:n_ages,first_y:last_y,first_y:last_y */;
 
   // Could have AUTOINIT 2 and AUTODEC 2 and AUTOINIT 3 etc here
   // ... needed iff array dims depend on calculations to be done during constructor

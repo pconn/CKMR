@@ -2,7 +2,7 @@ AD BEGIN
   WORKING DIRECTORY: "./work/";
 
   // For bounds-checking, change the next line into SWITCHES: "rebuild", "BoundsCheck"
-  SWITCHES: "rebuild","BoundsCheck"; 
+  SWITCHES: "rebuild"; //"BoundsCheck"; 
   CPP OPTIONS FILE: cpp_macros.txt;
   FORTRAN INCLUDE FILES: stdlib.f;
 
