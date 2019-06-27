@@ -27,14 +27,14 @@ protected:
   int n_POP;   // pairs actually found
   int n_HS;    // number of half sibs found
   int n_ages;  //number of age classes
-  int amat;    // age-at-maturity; assumed 100% thereafter
-  double a_mean; 
-  double b_mean;
-  double c_mean;
-  double haz_mult;
-  double wt_a;  //weight on RAW 'a' prior
-  double wt_b; //weight on RAW 'b' prior
-  double wt_c;   //ibid
+  int amat;    // age-at-maturity (just for summary statistics at this point)
+  //double a_mean; 
+  //double b_mean;
+  //double c_mean;
+  //double haz_mult;
+  //double wt_a;  //weight on RAW 'a' prior
+  //double wt_b; //weight on RAW 'b' prior
+  //double wt_c;   //ibid
 
   ARRAY_1I tcap/* n_samp */;     // year of capture/sampling
   ARRAY_1I a/* n_samp */;     // age at capture
@@ -45,15 +45,22 @@ protected:
   ARRAY_1I isamp_HS/* n_HS */;   // sample-index of first animal in this HS
   ARRAY_1I jsamp_HS/* n_HS */;   // ditto for second
   ARRAY_1I sex_HS/* n_HS */;   // parental sex of half-sibs
-  ARRAY_2D Fec_as/* 1:n_ages,0:1 */; //Fecundity by age and sex (# expected female offspring)
-
+  //ARRAY_2D Fec_as/* 1:n_ages,0:1 */; //Fecundity by age and sex (# expected female offspring)
+  ARRAY_1D Mu_eta/* 1:3 */; //mean of log scale RAW survival prior
+  ARRAY_1D SD_eta/* 1:3 */; //sd of prior
+  ARRAY_2D Mu_fec/* 1:2, 1:2 */; //mean of logistic fecundity params (real scale) [sex, param]
+  ARRAY_2D SD_fec/* 1:2, 1:2 */; //SD of logistic fecundity params [sex, param]
 
   /* AUTODEC 1 */
   // Things calculated in C
   double R0;     // # new recruits of 1 sex at time 1 (assume 50:50 sex ratio)
   double a_haz;      // a,b,c are reduced additive Weibull parameters (see Choquet et al. 2011 MEE)
-  double b_haz;     // mature male abund in first_y
+  double b_haz;     
   double c_haz;
+  double k_fem;
+  double k_male;
+  double f50_fem;
+  double f50_male;
 
   int nextpari;
 
@@ -82,6 +89,8 @@ protected:
   ARRAY_3D N_yas_breed /* first_y:last_y,1:n_ages, 0:1 */;
   ARRAY_1D temp_pars/* n_par */;
   ARRAY_3D S_aij/* 1:n_ages,first_y:last_y,first_y:last_y */;
+  ARRAY_2D Fec_as/* 1:n_ages,0:1 */; //Fecundity by age and sex (# expected female offspring)
+
 
   // Could have AUTOINIT 2 and AUTODEC 2 and AUTOINIT 3 etc here
   // ... needed iff array dims depend on calculations to be done during constructor

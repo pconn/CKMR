@@ -43,19 +43,32 @@
 
 \begin{document}
 
+\def\VAR{{\rm Var}\,}
+\def\COV{{\rm Cov}\,}
+\def\Prob{{\rm P}\,}
+\def\bfX{\bf X}
+\def\bfz{{\bf z}}
+\def\bfbeta{\boldsymbol{\beta}}
+\def\bfdelta{\boldsymbol{\delta}}
+\def\bfeta{\boldsymbol{\eta}}
+\def\bfnu{\boldsymbol{\nu}}
+\def\bfmu{\boldsymbol{\mu}}
+\def\bfphi{\boldgreek{\phi}}
+\def\bfx{\bf x}
+
 \frame{
 \centering
 \renewcommand{\baselinestretch}{1.8}\normalsize
-{\LARGE \textcolor{noaaturq}{Preferential sampling in species distribution models}}\\
+{\LARGE \textcolor{noaaturq}{Close-kin mark-recapture in dispersal limited populations}}\\
 \bigskip\bigskip
 \renewcommand{\baselinestretch}{1.25}\normalsize
 Paul B. Conn\\
 \footnotesize \textcolor{lightgray}{\em Marine Mammal Lab, NOAA Alaska Fisheries Science Center, Seattle, WA }\\
 \textcolor{lightgray}{Email: paul.conn@noaa.gov}\\
 \bigskip\bigskip
-\textcolor{lightgray}{PSAW II\\
-La Jolla, San Diego\\
-February 12, 2019}\\	
+\textcolor{lightgray}{WNAR meeting\\
+Portland, Oregon\\
+June 26, 2019}\\	
 \vspace*{\fill}
 \begin{figure}
 %	%\subfigure{\includegraphics[height=2cm]{UAFlogo.png}}
@@ -70,260 +83,378 @@ February 12, 2019}\\
 \begin{frame}
 \frametitle{Outline}
   \begin{enumerate}
-    \item Definitions
-    \item Models
-    \item Simulations
-    \item Seals
-    \item Birds
-    \item Final thoughts
+    \item CKMR: A brief introduction \pause
+    \item Canonical inference \pause
+    \item Assumption violations: dispersal limitation \pause
+    \item Spatially structured simulation study \pause
+    \item Earth-shattering conclusions
   \end{enumerate}
 \end{frame}
-
-
 
 \section{Background} % add these to see outline in slides
 \begin{frame}
-\frametitle{Definitions}
-  \textcolor{noaaturq}{\textbf{What is preferential sampling?}} \\ \pause
-
-  When a spatial process of interest and the locations chosen for sampling are conditionally dependent \textit{given} modeled covariates. \pause
-
-\vspace{0.5cm}
-
-\textcolor{noaaturq}{Data} (counts, presence/absence): ${\bf Y} = \{ Y_1, Y_2, \hdots, Y_n \}$ \pause
-
-\vspace{0.25cm}
-
-\textcolor{noaaturq}{Latent spatial process} (abundance, occupancy): ${\bf Z} = \{ Z_1, Z_2, \hdots, Z_S \}$ \pause
-
-\vspace{0.25cm}
-
-\textcolor{noaaturq}{Covariates}: ${\bf X} = \{ {\bf x}_1, {\bf x}_2, \hdots, {\bf x}_S \}$ \pause
-
-\vspace{0.25cm}
-
-\textcolor{noaaturq}{Sample inclusion indicator}: ${\bf R} = \{ R_1, R_2, \hdots, R_S \}$ \pause
-
-\begin{block}{Definition: Preferential sampling (after \citet{DiggleEtAl2010}, \citet{PatiEtAl2011})}
-      Preferential sampling exists if $[{\bf R},{\bf Z} | {\bf X}] \neq [{\bf R}|{\bf X}][{\bf Z}|{\bf X}]$
-\end{block}
+\frametitle{CKMR}
+  \textcolor{noaaturq}{\textbf{What is close-kin mark-recapture (CKMR)?}} \\ \pause
+  A framework for estimating abundance and demography based on the frequency of
+  kinship relationships (e.g., parent-offspring, half siblings) observed in (tissue) samples of fish and wildlife populations
+  \pause
+  \begin{enumerate}
+    \item Genotype samples
+    \item Determine kin relationships (``kinference")
+    \item Conduct statistical inference
+  \end{enumerate}
 \end{frame}
 
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{CKMR}
+  \textcolor{noaaturq}{Cartoon example: parent-offspring analysis in same year (from \citet{BravingtonEtAl2016})} \\
+  \begin{columns}[c]
+  \column{2.4in}
+    \begin{itemize}
+      \item Out of a population of $N_J=9$ juveniles and $N_A = 16$ adults, $n_j=4$ juveniles and
+        $n_A =6$ adults are sampled.
+      \item Each juvenile `marks' 2 parents
+      \item Each juvenile compared to each adult
+      \item $H = 3$ parent-offspring relationships observed
+    \end{itemize}
+    \column{1.6in}
+  \framebox{\includegraphics[width=1.6in]{CKMR_LP_fish.jpg}}
+  \end{columns}
+\end{frame}
 
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{CKMR}
+  \textcolor{noaaturq}{Cartoon example: parent-offspring analysis in same year (from \citet{BravingtonEtAl2016})}
+  \begin{columns}[c]
+  \column{2.4in}
+    \begin{itemize}
+      \item Number of comparisons: $n_j n_a$
+      \item Probability of ``success" = $2/N_A$
+      \item Lincoln-Petersen type estimator: $\hat{N_A} = 2 n_J n_A / H = 16$.
+    \end{itemize}
+    \column{1.6in}
+  \framebox{\includegraphics[width=1.6in]{CKMR_LP_fish.jpg}}
+  \end{columns} \pause
+  \vspace{0.5cm}
+  \textcolor{noaaturq}{\huge $\rightarrow$ Amazing!}
+\end{frame}
+
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{CKMR}
+  \textcolor{noaaturq}{Cartoon example: parent-offspring analysis in same year (from \citet{BravingtonEtAl2016})}
+  \begin{columns}[c]
+  \column{2.4in}
+    \begin{itemize}
+      \item Number of comparisons: $n_j n_a$
+      \item Probability of ``success" = $2/N_A$
+      \item Lincoln-Petersen type estimator: $\hat{N_A} = 2 n_J n_A / H = 16$.
+    \end{itemize}
+    \column{1.6in}
+  \framebox{\includegraphics[width=1.6in]{CKMR_LP_fish.jpg}}
+  \end{columns} \pause
+  \vspace{0.5cm}
+  \textcolor{noaaturq}{\huge $\rightarrow$ Amazing!}
+\end{frame}
+
+\section{Background} % add these to see outline in slides
+\begin{frame}
+\frametitle{CKMR}
+  Lincoln-Petersen type estimators have been applied to estimate abundance of spawning Chinook salmon in the Columbia river...
+  \vspace{0.5cm}
+
+  \framebox{\includegraphics[width=3in]{RawdingScreenshot.jpg}}
+
+  \vspace{0.5cm}
+  but the idea is considerably more broad!
+\end{frame}
+
+\section{Inference} % add these to see outline in slides
+\begin{frame}
+\frametitle{Canonical inference}
+\textcolor{noaaturq}{Maximum pseudo-likelihood \citep{BravingtonEtAl2016}}
+
+More generally (e.g. with data spanning multiple ages, years and sexes) we can base inference on
+
+ \begin{equation*}
+     L = \prod_i \prod_{j>i} \prod_k P_{ijk}^{y_{ijk}} (1-P_{ijk})^{(1-y_{ijk})},
+     \label{eq:likelihood}
+ \end{equation*}
+where
+\begin{itemize}
+  \item $i$ indicates animal 1,
+  \item $j$ indicates animal 2,
+  \item $k$ indicates a particular kinship relationship
+  \item $P_{ijk}$ is probability of a kinship match
+  \item $y_{ijk}$ is a match indicator
+\end{itemize}
+\end{frame}
 
 \begin{frame}
-  \frametitle{Definitions: pop quiz!}
-  \vspace{0.75cm}
-
-  \textcolor{noaaturq}{Example 1} An investigator (or volunteer) uses prior knowledge of animal density to select locations for sampling. \\ \pause
+  \frametitle{Canonical inference}
+  \textcolor{noaaturq}{$P_{ijk}$ for Parent-offspring pairs}
 
   \vspace{0.5cm}
 
-  \textcolor{noaaturq}{Example 2} An investigator is more likely to sample sites close to a base of operations, and animal densities there are higher (or lower) than expected based on explanatory covariates alone.
+  \citet{BravingtonEtAl2016} introduced the concept of relative reproductive output for formulating CKMR probabilities.  Assuming accurate aging info, and ordering animals so that $b_i<b_j$,
 
-\end{frame}
-
-
-\begin{frame}
-  \frametitle{Models}
-  \vspace{0.75cm}
-
-  Most published work on preferential sampling in continuous spatial domain w/ Gaussian processes. \pause
-
- \vspace{0.25cm}
-  Here, I consider a species distribution model for count data on a discrete spatial domain.\\
-  \vspace{0.25cm}
-   \textcolor{noaaturq}{Latent abundance }:
-   \begin{eqnarray*}
-      Z_i  & = & A_i \mu_i. \\
-   \log(\mu_i)  & = & \beta_0 + {\bf x}_i \boldsymbol{\beta}+\delta_i \\
-   \boldsymbol{\delta} & \sim & \textrm{MVN}(0,\boldsymbol{\Sigma})
-   \end{eqnarray*} \pause
-   \textcolor{noaaturq}{Observation model }:
-   \begin{eqnarray*}
-      Y_i  & \sim & \textrm{Poisson}(Z_i p_i)
-   \end{eqnarray*}
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Preferential sampling model}
-  \textcolor{noaaturq}{Sample inclusion indicator}:
-    \begin{eqnarray*}
-      R_i & \sim & \textrm{Bernoulli}(\nu_i)\\
-    \textrm{logit}(\nu) & = & \beta_0^* + {\bf X}^* \boldsymbol{\beta}^*+\boldsymbol{\eta}+{\bf B} \boldsymbol{\delta} \\
-      \boldsymbol{\eta} & \sim & \textrm{MVN}(0,\boldsymbol{\Sigma}^*)
-    \end{eqnarray*} \pause
-
-    \vspace{0.25cm}
-
-    Note that $\boldsymbol{\delta}$ random effects are also included in the latent abundance model, providing for possible dependence. \pause
-
-    \vspace{0.5cm}
-
-    The matrix ${\bf B}$ describes preferential sampling.  We set  ${\bf B} = b{\bf I}$ (if one is brave, more sophistication possible). \pause
-
-     \vspace{0.5cm}
-
-    \textcolor{noaaturq}{Total abundance posterior prediction}:
-    $\tilde{N} = \sum_i Z_i$
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Simulations}
-  \textcolor{noaaturq}{Rationale}:
-  \begin{enumerate}
-  \item See what effects preferential sampling
-  has on abundance estimation
-  \item See how well our modeling framework does in alleviating bias
-  \end{enumerate} \pause
-  \begin{columns}[c]
-\column{2in}
-  Three simulation scenarios:
+  \begin{equation*}
+   P_{ij1} = \frac{E[R_i(b_j)|\bfz_i,\bfz_j]}{E[R_+(b_j)|\bfz_j]},
+  \end{equation*}
   \begin{itemize}
-    \item No preferential sampling,
-    \item moderate preferential sampling,
-    \item pathological preferential sampling
-   \pause
-   \end{itemize}\column{2in}
-\framebox{\includegraphics[width=2in]{sim_R.pdf}}
-\end{columns}
+    \item $\bfz_i,\bfz_j$ are covariate vectors for animals $i$ and $j$ (sex, age, etc.)
+    \item $R_i(b_j)$ is reproductive output of animal $i$ in $b_j$, the year of $j$'s birth.
+    \item $R_+(b_j)$ is total reproductive output of the population in year $b_j$
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Simulations}
-  \begin{columns}[c]
-\column{1.5in}
+  \frametitle{Canonical inference}
+  \textcolor{noaaturq}{$P_{ijk}$ for Parent-offspring pairs}
+
+  \vspace{0.5cm}
+
+  If all adults have same reproductive output, this is simply
+
+  \begin{eqnarray*}
+   P_{ij1} &  = & 2/N_A(b_j),
+  \end{eqnarray*}
+
+  \vspace{.5cm}
+
+  where $N_A(b_j)$ is the number of adults in year $b_j$.
+  Typically, separate calculations would be made for males and female parents,
+  so we might include sex subscripts on things...
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Canonical inference}
+  \textcolor{noaaturq}{$P_{ijk}$ for Half-sibling pairs}
+
+  \vspace{0.5cm}
+  Again ordering comparisons so that $b_i < b_j$ (and suppressing covariate dependence and expected value notation)
+
+  \begin{equation*}
+  P_{ij2} = \sum_{d}  \frac{R_d(b_i)}{R_+(b_i)} \frac{R_d(b_j)}{R_+(b_j)}
+  \label{eq:halfsib}
+  \end{equation*}
+
+  If all adults are the same in terms of reproductive status this is simply
+   \begin{equation*}
+  P_{ij2} = \frac{\phi_{b_i \rightarrow b_j}}{N_A(b_j)}
+  \label{eq:halfsib}
+  \end{equation*}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{CKMR Assumptions}
 \begin{itemize}
-\item Matern covariance structure
-\item Laplace approximation via Template Model Builder \citep{KristensenEtAl2016}
-\item 500 simulations per design point
-\item Details in \cite{ConnEtAl2017}
+  \item Accurate genotyping
+  \item No heterogeneity in kinship probabilities that can't be explained by observed (or inferred)
+        covariates \pause
+  \item Population and sampling model is accurate \pause
+  \item Population is randomly sampled
+       \begin{enumerate}
+         \item Complete mixing -or-
+         \item Random sampling
+       \end{enumerate}
 \end{itemize}
-\column{2.8in}
-\framebox{\includegraphics[width=2.8in]{Pref_samp_sim_maps.pdf}}
-\end{columns}
 \end{frame}
 
-
 \begin{frame}
-\frametitle{Simulations}
-\framebox{\includegraphics[width=3in]{bias.pdf}}
-\end{frame}
-
-
-
-
-\begin{frame}
-\frametitle{Seals}
-Ice-associated seal aerial surveys - Bering Sea 2012
-\begin{columns}[c]
-\column{2in}
-\framebox{\includegraphics[width=2in]{Scenario_H5.pdf}} \pause
-\column{2in}
-\framebox{\includegraphics[width=2in]{BOSS2012_Effort.jpg}} \pause
-\end{columns}
-\vspace{.25in}
- \textcolor{noaaturq}{Preferential sampling?}
-%\begin{columns}[c]
-%\column{2in}
-%\framebox{\includegraphics[width=2in]{ice_april1.pdf}}
-%\column{2in}
-%\end{columns}
-\end{frame}
-
-
-
-
-
-
-\begin{frame}
-\frametitle{Seals}
-  \begin{columns}[c]
-\column{2in}
+\frametitle{CKMR Assumptions}
 \begin{itemize}
-\item Limit to aerial survey counts obtained in one week period (April 10-16, 2012)
-\item Ignore multiple detection process vagaries
-\item Maximum coverage of strip transects in each 625km$^2$ cell is 3.3\%
+  \item No heterogeneity in kinship probabilities that can't be explained by observed (or inferred)
+        covariates
+
+  \item Population and sampling model is accurate
+
+  \item \bf Population is randomly sampled
+       \begin{enumerate}
+         \item Complete mixing -or-
+         \item Random sampling
+       \end{enumerate}
+       \rm
 \end{itemize}
-\column{2.5in}
-\framebox{\includegraphics[width=2.5in]{Bearded_counts.pdf}} \pause
+\end{frame}
+
+\begin{frame}
+\frametitle{Checks for complete mixing}
+Check 1: Visual checks using genetics and auxiliary data (e.g., telemetry)
+
+\vspace{0.5cm}
+
+  \framebox{\includegraphics[width=4in]{white_shark_connectivity.jpg}}
+  \citet{HillaryEtAl2018}
+\end{frame}
+
+\begin{frame}
+\frametitle{Checks for complete mixing}
+  \begin{columns}[c]
+  \column{2in}
+   Check 2: Formal tests of distribution
+
+   \vspace{1cm}
+   Observation: We can learn about dispersal from genetic relatedness data, but dispersal has largely not yet been integrated into CKMR estimation models
+  \column{2in}
+  \framebox{\includegraphics[width=1.5in]{distance_fig.pdf}}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Checks for complete mixing}
+  \begin{columns}[c]
+  \column{2in}
+
+  \textcolor{noaaturq}{Check for mixing passes}: Yay! Full speed ahead using opportunistically gathered genetic samples.
+
+  \vspace{0.5cm}
+
+  \textcolor{noaaturq}{Check for mixing fails}:  What then? Can I still use CKMR with opportunistically (and quite likely spatially biased) sampling?
+
+    \column{2in}
+  \framebox{\includegraphics[width=2in]{hunter_dist.jpg}}
+  \citet{DiefenbachEtAl2005}
+  \end{columns}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Simulation study}
+  \begin{columns}[c]
+  \column{2in}
+\begin{itemize}
+  \item Individual based; keep track of relatives
+  \item Abundance uniform on $10 \times 10$ grid
+  \item Animals can only reproduce with each other if
+  they are in same grid cell
+  \item Demographic schedules $\approx$ bearded seals
+\end{itemize}
+  \column{2in}
+  \colorbox{white}{\includegraphics[width=2in]{life_history.pdf}}
 \end{columns}
 \end{frame}
 
 \begin{frame}
-\frametitle{Seals}
+\frametitle{Simulation study}
   \begin{columns}[c]
-\column{1.5in}
-\framebox{\includegraphics[width=1.5in]{bearded_pic.jpg}} \pause
-\column{3in}
+  \column{2in}
 \begin{itemize}
-\item 4 models fit to bearded seal counts \pause
-\item Covariates: yes/no \pause
-\item Preferential sampling parameter $b$ estimated: yes/no \pause
-\item Covariates modeled:
+  \item Four dispersal scenarios: no dispersal, juvenile-only\textcolor{noaaturq}{$^\dag$}, all-ages\textcolor{noaaturq}{$^\dag$}, complete mixing
+  \item Total population size $\approx 10,000$
+  \item Simulations run for 60 years, 100 individuals sampled per year in years 41-60
+  \item 4 sampling scenarios
+\end{itemize}
+     \textcolor{noaaturq}{$^\dag$ discretized normal kernel with $\sigma=1.0$ grid cell}
+  \column{2in}
+  \colorbox{white}{\includegraphics[width=2in]{sampling_fig2.pdf}}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Simulation study}
+\textcolor{noaaturq}{Pseudo-likelihood}
+
+(Non-spatial) pseudo-likelihood probabilities calculated as function of underlying population model.
+
+\begin{itemize}
+\item $N_{a,t,g}$: Number of age $a$, sex $g$ individuals alive at time $t$
+\item $N_{0,t,g} = \exp (R_0)$
+\item $N_{a,1,g} = N_{a-1,1,g} S_a$ for $a>0$ (stable age structure at time $t=1$)
+\item $N_{0,t,g} = 0.5 \sum_a N_{a,t,1} f_{a,1}$ for $t>1$ (fecundity $f_{a,g}$)
+\item $N_{a,t,g} = N_{a-1,t-1,g} S_{a-1}$
+\item $S_a$ = Reduced Additive Weibull$(a ; \eta_1,\eta_2,\eta_3)$,
+\item $f_{a,g} = [1+\exp(-\kappa_g (a - \alpha_g))]$  (logistic function)
+\item Parameters: $\boldsymbol{\theta} = \{ R_0, \eta_1, \eta_2, \eta_3, k_1, k_2,\alpha_1,\alpha_2 \}$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Simulation study}
+\begin{columns}
+\column{\dimexpr\paperwidth-10pt}
+\textcolor{noaaturq}{Pseudo-likelihood}
+\footnotesize
+
+Parent-offspring probabilities
+\begin{equation*}
+  P_{b_1,y_1,b_2,g} =
+  \left\{ \begin{array}{ll}
+    \frac{f_{y_1-b_1-1,g}}{\sum_a N_{a,b_2,g} f_{a-1,g}} & \text{if } y_1>b_2, b_1 < y_1 \le (b_1+37), \text{ and } y_1 \le (b_2+37) \\
+    0  & \text{otherwise}.
+  \end{array} \right\}
+\end{equation*}
+
+Half-sib probabilities
+\begin{equation*}
+  P_{b_1,b_2,g}^\prime = \sum_a N_{a,b_1,g} \frac{f_{a-1,g}}{\sum_{a^\prime} N_{a^\prime,b_1,g}f_{a^\prime-1,g}} \left( \prod_{y=b_1}^{b_2-1} S_{a+y-b_1} \right) \frac{f_{a+b_2-b_1-1,g}}{\sum_{a^\prime} N_{a^\prime,b_2,g}f_{a^\prime-1,g}}.
+  \label{eq:halfsib}
+\end{equation*}
+
+Negative joint log pseudo-likelihood (Poisson approx)
+\begin{eqnarray*}
+     \Lambda & = & \sum_{b_1} \sum_{y_1} \sum_{b_2} \sum_g m_{b_1,y_1,b_2,g} \log(n_{b_1,y_1,b_2,g} P_{b_1,y_1,b_2,g}) - n_{b_1,y_1,b_2,g} P_{b_1,y_1,b_2,g} + \\
+     & & \sum_{b_1} \sum_{b_2} \sum_g m_{b_1,b_2,g}^\prime \log(n_{b_1,b_2,g}^\prime P_{b_1,b_2,g}^\prime) - n_{b_1,b_2,g}^\prime P_{b_1,b_2,g}^\prime - \\
+     & & \sum_{i=1}^3  (2 \sigma_{\eta,i}^2)^{-1} (\eta_i - \mu_{\eta,i})^2 - \sum_{i=1}^2  (2 \sigma_{\kappa,i}^2)^{-1} (\kappa_i - \mu_{\kappa,i})^2 - \sum_{i=1}^2  (2 \sigma_{\alpha,i}^2)^{-1} (\alpha_i - \mu_{\alpha,i})^2
+\end{eqnarray*}
+
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Simulation study}
+\textcolor{noaaturq}{Computing}
+\begin{itemize}
+\item Joint negative log pseudo-likelihood minimized using \texttt{nlminb} function in R \pause
+\item Log-likelihood coded in C++ and linked to R via the ADT package which allows automatic differentiation from Tapenade libraries \pause
+\item 100 simulations per design point (4 movement scenarios, 4 sampling scenarios)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results - Abundance}
+  \colorbox{white}{\includegraphics[width=3in]{BiasN_fec.pdf}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results - Adult survival}
+  \begin{columns}[c]
+  \column{2.5in}
+  \colorbox{white}{\includegraphics[width=2.5in]{S_results.pdf}}
+  \column{1.5in}
+   \begin{itemize}
+   \item Relatively unbiased at `high sample size' ages in all scenarios \textit{except} with adult dispersal and refugia scenario (adults emigrating from sampled area confounded with survival)
+   \item Mean ``posterior" SE to ``prior" SD ratios: 0.47, 0.81, 0.37 
+   \end{itemize}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Results - Fecundity}
+  \begin{columns}[c]
+  \column{2.5in}
+  \colorbox{white}{\includegraphics[width=2.5in]{Fec_results.pdf}}
+       \column{1.5in}
     \begin{itemize}
-     \item \textcolor{noaaturq}{sea ice concentration} (linear + quadratic)
-     \item \textcolor{noaaturq}{distance from southern ice edge} (linear) \pause
-     \end{itemize}
-\item Same TMB estimation procedure as in simulations
-\end{itemize}
-\end{columns}
+   \item Generally unbiased
+   \item Mean ``posterior" SE to ``prior" SD ratios: 0.79, 0.83, 1.17, 0.76 
+   \end{itemize}
+   \end{columns}
 \end{frame}
 
 \begin{frame}
-\frametitle{Seals}
-\begin{tabular}{lccccc}
-  \hline
-  Model & LogL & k & CV-MSPE (SE)& $\Delta \textrm{AIC}$ & $\hat{N}$(SE) \\
-  \hline
- $M_{cov=0,b=0}$ & -852.7 & 5 & 87.2 & 99.1 & 70738 (6988) \\
- $M_{cov=1,b=0}$ & -847.6 & 12 & 88.3 & 103.0 & 66989 (20374) \\
- $M_{cov=1,b=1}$ & -795.1 & 13 & 105.3 & 0.0 & 40656 (3664) \\
- $M_{cov=0,b=1}$ & -803.0 & 6 & 116.2 & 1.9 & 43232 (2778) \\
-  \hline
-\end{tabular} \pause
-
-\vspace{.3cm}
-
-Comments:
-\begin{itemize}
-  \item Difference in support based on model selection criterion  \pause
-  \item Model with $b$ estimated had $\hat{b} > 9.0$! \pause
-  \item Conclusion: preferential sampling model unstable; use model w/ $b=0$
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Birds}
-Peregrine falcon presence-absence surveys at sites in the French Jura Alps
-
-\vspace{.5cm}
-
-\colorbox{white}{\includegraphics[width=3.2in]{peregrine_presence.png}}
-\end{frame}
-
-\begin{frame}
-\frametitle{Birds}
-Peregrine estimates
-
-\vspace{.5cm}
-
-\colorbox{white}{\includegraphics[width=3.2in]{peregrine_estimates.png}}
-\end{frame}
-
-\begin{frame}
-\frametitle{Final thoughts}
-  \begin{enumerate}
-    \item Model-based inference is not a free pass \pause
-    \item It would be really nice not to go to such modeling elaborations: include design-based protocols in design! \pause
-    \item Include covariates and stratification where possible \pause
-    \item Can use methods such as those here for diagnosis of preferential sampling and possible bias reduction \pause
-    \item Would be interesting to see what happens when spatial autocorrelation is represented through first order structure (e.g., GAMs) \pause
-    \item Applications in other areas: e.g. CPUE standardization in fisheries, time series
-  \end{enumerate}
+\frametitle{Summary}
+ \begin{itemize}
+   \item CKMR an exciting new approach for estimating abundance and demography using opportunistically collected genetic data; high profile applications (southern bluefin tuna, white sharks, salmon) but potential for many more (esp in exploited populations) \pause
+   \item Inference appears to be moderately robust to dispersal limitation when there is moderate spatial bias in sampling probability (but not extreme bias!)  \pause
+    \item Needs to be examined on a case-by-case basis; individual based simulation useful in that regard \pause
+   \item Potential for quantifying dispersal rates by integrating sampling location into future modeling efforts
+  \end{itemize}
 \end{frame}
 
  \section{End notes}
@@ -335,16 +466,18 @@ Peregrine estimates
 
   \textcolor{noaaturq}{Acknowledgments} \\
   \begin{itemize}
-  \item Coauthors: Jim Thorson, Devin Johnson.
-  \item Bird plots from Marc K$\acute{\textrm{e}}$ry, Swiss Ornithological Institute
-  \item Seal field research conducted by PEP program at NOAA/AFSC/MML, funded by NOAA and BOEM.
+  \item Coauthors: Mark Bravington, Jay Ver Hoef
+  \item Individual-based simulation code adapted from \texttt{fishsim} code by Shane Baylis
+  \item Mark Bravington, Paavo Jumppanen: Development and software assist with configuring \texttt{ADT} R package to work with Tapenade autodiff libraries and Visual C++
   \end{itemize}
   \vspace{0.5cm}
    \textcolor{noaaturq}{References}
  \bibliographystyle{plainnat}
- {\footnotesize
+ {\tiny
   \bibliography{master_bib}}
 
  \end{frame}
+
+
 
 \end{document}

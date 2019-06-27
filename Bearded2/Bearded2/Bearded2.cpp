@@ -188,7 +188,11 @@ void Bearded2::unpack(
   R0 = exp( next_param());
   a_haz = exp(next_param());
   b_haz = exp(next_param()) + 1.0;
-  c_haz = exp(next_param());
+  c_haz = exp(next_param());  
+  k_fem = next_param();
+  f50_fem = next_param();
+  k_male = next_param();
+  f50_male = next_param();
   //b_mort = exp(next_param());
   //c_mort = exp(next_param());
   //d_mort = exp(next_param());
@@ -226,10 +230,20 @@ void Bearded2::populate(
   for (iage = 1; iage <= n_ages; iage++) {
 	  for (i = first_y; i <= last_y; i++) {
 		  for (j = i + 1; j <= last_y; j++) {  //implies no matches if half sibs born in same year
-			  S_aij[iage][i][j] = exp(haz_mult*(-pow(a_haz*(iage + j - i - 1), b_haz) - pow(a_haz*(iage + j - i - 1), 1.0 / b_haz) - c_haz * (j - i)
-				  + pow(a_haz*(iage-1), b_haz) + pow(a_haz*(iage-1), 1.0 / b_haz)));
+			  //S_aij[iage][i][j] = exp(haz_mult*(-pow(a_haz*(iage + j - i - 1), b_haz) - pow(a_haz*(iage + j - i - 1), 1.0 / b_haz) - c_haz * (j - i)
+				//  + pow(a_haz*(iage-1), b_haz) + pow(a_haz*(iage-1), 1.0 / b_haz)));
+			  S_aij[iage][i][j] = exp(-pow(a_haz*(iage + j - i - 1), b_haz) - pow(a_haz*(iage + j - i - 1), 1.0 / b_haz) - c_haz * (j - i)
+				  + pow(a_haz*(iage - 1), b_haz) + pow(a_haz*(iage - 1), 1.0 / b_haz));
+
 		  }
 	  }
+  }
+
+  // Fill fecundity array
+  zero(Fec_as);
+  for (iage = 3; iage <= n_ages; iage++) {  //set Fec_as = 0 for first 2 age classes
+	  Fec_as[iage][0] = 0.5 / (1 + exp(-k_fem*(iage - f50_fem)));
+	  Fec_as[iage][1]= 0.5 / (1 + exp(-k_male*(iage - f50_male)));
   }
 
   zero(N_yas);
@@ -337,7 +351,7 @@ void Bearded2::calc_probs(
 double Bearded2::lglk(
   const ARRAY_1D pars/* n_par */
 ){
-  int pby, pcapt, isex,oby,oby2;
+  int pby, pcapt, isex,ipar,oby,oby2;
   double tot_lglk;
   ////
 
@@ -389,8 +403,20 @@ double Bearded2::lglk(
 	  //}
   }
 
+
   /// priors on survival pars
-  tot_lglk -= wt_a*(pow(a_haz-a_mean,2)+ wt_b*pow(b_haz - b_mean,2) + wt_c*pow(c_haz-c_mean,2)); //weight of 50 equiv to SE = 0.1
+  //tot_lglk -= wt_a*(pow(a_haz - a_mean, 2) + wt_b*pow(b_haz - b_mean, 2) + wt_c*pow(c_haz - c_mean, 2)); //weight of 50 equiv to SE = 0.1
+
+  for (ipar = 1; ipar <= 3; ipar++) {
+	  tot_lglk -= pow(pars[ipar + 1] - Mu_eta[ipar], 2.0) / (2.0*pow(SD_eta[ipar], 2.0));
+  }
+
+  // priors on fecundity params
+  for(isex=1;isex<=2;isex++){
+	  for (ipar = 1; ipar <= 2; ipar++) {
+		  tot_lglk -= pow(pars[4+(isex-1)*2+ipar] - Mu_fec[isex][ipar], 2.0) / (2.0*pow(SD_fec[isex][ipar], 2.0));
+	  }
+  }
 
   // Bin version *without* n_log_p needs if-statements to avoid log(0)
   // and should use log1p( -Pr_PO_ytb[ pmaty][ pcapt][ oby])

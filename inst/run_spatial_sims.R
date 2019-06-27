@@ -23,28 +23,34 @@ getc = function(x)eval(parse(text=paste0("Cenv$get.",x,"(ck)")))
 
 
 #Survival stuff
-haz.mult = exp(-0.19)  #proportional hazards multiplier for bearded seals
-haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
-a.haz = 0.0541
-b.haz = 1.609 + 1.0  # bounded below by 1.0
-c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
-a_mean = a.haz
-b_mean = b.haz
-c_mean = c.haz
-wt_a = 100
-wt_b = 100
-wt_c = 100
-haz_mult=haz.mult
+# haz.mult = exp(-0.19)  #proportional hazards multiplier for bearded seals
+# haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
+# a.haz = 0.0541
+# b.haz = 1.609 + 1.0  # bounded below by 1.0
+# c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
+# a_mean = a.haz
+# b_mean = b.haz
+# c_mean = c.haz
+# wt_a = 100
+# wt_b = 100
+# wt_c = 100
+# haz_mult=haz.mult
+SD_eta = c(0.15,0.25,0.5)  #prior sd's  
+Mu_eta = c(-2.904, 0.586, -2.579) #prior means (log-scale RAW survival model) - produced in fit_survival.R
 
 Seal_life_hist = read.csv("c:/users/paul.conn/git/ckmr/sim_inputs.csv",header=T)[1:38,]
 ages <- (min(Seal_life_hist$Age):max(Seal_life_hist$Age))+1  #we'll start age at 1
 n.ages=n_ages= max(ages)-min(ages)+1
-Mat.male = c(0,Seal_life_hist[1:37,"Mat.male"])  #add a zero because of delayed implantation
-Mat.fem = c(0,Seal_life_hist[1:37,"Mat.fem"]) #add a zero because of delayed implantation
+# Mat.male = c(0,Seal_life_hist[1:37,"Mat.male"])  #add a zero because of delayed implantation
+# Mat.fem = c(0,Seal_life_hist[1:37,"Mat.fem"]) #add a zero because of delayed implantation
 Fec_as = matrix(0,n_ages,2)
-Fec_as[,1] = 0.5*Mat.fem
-Fec_as[,2] = 0.5*Mat.male
-
+# Fec_as[,1] = 0.5*Mat.fem
+# Fec_as[,2] = 0.5*Mat.male
+Fec_as[,1] = 0.5/(1+exp(-1.264*(c(1:n_ages)-5.424)))  #exponential models fit to bearded seal data
+Fec_as[,2] = 0.5/(1+exp(-1.868*(c(1:n_ages)-6.5)))
+Fec_as[1:2,]=0 
+Mu_fec = matrix(c(1.264,1.868,5.424,6.5),2,2)
+SD_fec = 0.4*Mu_fec
 
 n.stocks = 100 #make sure square
 library(sp)
@@ -54,21 +60,29 @@ Distances = gDistance(Locations,byid=TRUE) #formulate distance matrix, assuming 
 
 n_ages = n.ages
 
-par_start = c(log(945),log(a.haz),log(b.haz-1),log(c.haz)) 
+#par_start = c(log(945),log(a.haz),log(b.haz-1),log(c.haz)) 
+par_start = c(log(945),Mu_eta,1.3,5.4,1.9,6.5)  #init R0, 3 survival RAW pars, 2 logistic fecundity fem, 2 logistic fecundity male 
+
 
 Disp.type = c("random","all.ages","juvenile","none")
-Exp.type = c('constant','moderate.gradient','extreme.gradient')
+Exp.type = c('constant','moderate.gradient','extreme.gradient','refugia')
 
 Sim_results = array(0,dim=c(length(Disp.type),length(Exp.type),n.sims,5)) #last dim is True N, est N, SE N, Est S, SE S
+Est_pars = SE_pars = array(0,dim=c(length(Disp.type),length(Exp.type),n.sims,8)) 
+
+idisp=1
+iexp=1
+isim=1
 
 for(idisp in 1:4){
-  for(iexp in 1:3){
+  for(iexp in 1:4){
     for(isim in 1:n.sims){
       curd = simulate_spatial(exp.type=Exp.type[iexp],dispersal.type=Disp.type[idisp],init.N=10000,samp.size=100,n.stocks=n.stocks)
       first_y = 1
       last_y= max(curd$sim_data$samps$DY)
       
-      n_par = 4
+      #n_par = 4
+      n_par = 8
       n_samp = nrow(curd$sim_data$samps)
       n_POP = length(curd$sim_data$isamp_POP)
       amat = 3  #age at maturity is used to calculate number of comparisons and thus speeds likelihood computation
@@ -135,13 +149,14 @@ for(idisp in 1:4){
       phi_RAW = function(a.haz,b.haz,c.haz,haz.mult,Age){
         exp(-haz.mult*((a.haz*Age)^b.haz + (a.haz*Age)^(1/b.haz) + c.haz - (a.haz*(Age-1))^b.haz - (a.haz*(Age-1))^(1/b.haz) ))
       }
-      haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
-      a.haz = 0.0541
-      b.haz = 1.609 + 1.0  # bounded below by 1.0
-      c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
-      #ageSurv <- phi_RAW(a.haz,b.haz,c.haz,haz.mult,c(1:38))
+      #haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
+      #a.haz = 0.0541
+      #b.haz = 1.609 + 1.0  # bounded below by 1.0
+      #c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
+      #ageSurv <- phi_RAW(a.haz,b.haz,c.haz,haz.mult=exp(0.26),c(1:38))
       
-      # S2 = phi_RAW(exp(fitme$par[2]),exp(fitme$par[3])+1,exp(fitme$par[4]),haz.mult=haz.mult,Age=c(1:38))
+      # S2 = phi_RAW(exp(fitme$par[2]),exp(fitme$par[3])+1,exp(fitme$par[4]),haz.mult=exp(0.26),Age=c(1:38))
+      # S2 = phi_RAW(exp(fitme$par[2]),exp(fitme$par[3])+1,exp(fitme$par[4]),haz.mult=1,Age=c(1:38))
       # plot(S2)
       # lines(ageSurv)
       # S3 = phi_RAW(exp(par_start[2]),exp(par_start[3])+1,exp(par_start[4]),haz.mult=haz.mult,Age=c(1:38))
@@ -152,18 +167,23 @@ for(idisp in 1:4){
         S_aij <- getc("S_aij")
         return( S_aij[a,i,j])
       }
-      true.S = prod(phi_RAW(a.haz,b.haz,c.haz,haz.mult,c(4:10)))
+      true.S = prod(phi_RAW(a.haz=exp(-2.904),b.haz=1+exp(.586),c.haz=exp(-2.579),haz.mult=1,c(4:10)))
       estS = getS(fitme$par,4,1,8)  
       dSdpar <- numderiv( getS, fitme$par, a=4,i=1,j=8)
       varS = dSdpar %**% solve( -H) %**% t(dSdpar)
       
       Sim_results[idisp,iexp,isim,]=c(true.mean.N,est.mean.N,SE,estS, sqrt(varS))
+      Est_pars[idisp,iexp,isim,]=fitme$par
+      SE_pars[idisp,iexp,isim,]=sqrt(diag(stuff$Sigma))
     }
+    save(Sim_results,file="Sim_out_fec.RData")
+    save(Est_pars,file="Est_pars.RData")
+    save(SE_pars,file="SE_pars.RData")
   }
 }
 elapsed = proc.time()-start.time
 cat(elapsed)
-save(Sim_results,file="Sim_out.RData")
+
 # 
 # n_comps_ytbs = getc("n_comps_ytbs")
 # n_match = getc("n_match_ytbs")

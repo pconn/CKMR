@@ -1,7 +1,7 @@
 # simulate spatial CKMR data
 
 #' simulate spatial CKMR data
-#' @param exp.type   exploitation type. Possible types are 'constant' (default), 'moderate.gradient', 'extreme.gradient'
+#' @param exp.type   exploitation type. Possible types are 'constant' (default), 'moderate.gradient', 'extreme.gradient', or 'refugia'
 #' @param dispersal.type  Type of dispersal - 'random' (default - complete mixing), 'all.ages', 'juvenile', or 'none' (all.ages and juvenile include dispersal kernels)
 #' @param init.N Initial population size
 #' @param samp.size Number of dead animals to genotype each year for last 20 years of time series
@@ -30,11 +30,15 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   
   
   #bearded seal hazard rate pars for RAW model (from Trukhanova at al.)
-  haz.mult = exp(-0.19)  #proportional hazards multiplier for bearded seals
-  haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
-  a.haz = 0.0541
-  b.haz = 1.609 + 1.0  # bounded below by 1.0
-  c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
+  # haz.mult = exp(-0.19)  #proportional hazards multiplier for bearded seals
+  # haz.mult = exp(0.26)  # alternative value to give lambda close to 1.0
+  # a.haz = 0.0541
+  # b.haz = 1.609 + 1.0  # bounded below by 1.0
+  # c.haz = -(log(0.97)-0.00513)  #including harvest mortality of 0.03 here
+  
+  a.haz = exp(-2.904)
+  b.haz = 1 + exp(0.586)
+  c.haz = exp(-2.579)
   phi_RAW = function(a.haz,b.haz,c.haz,haz.mult,Age){
     exp(-haz.mult*((a.haz*Age)^b.haz + (a.haz*Age)^(1/b.haz) + c.haz - (a.haz*(Age-1))^b.haz - (a.haz*(Age-1))^(1/b.haz) ))
   }
@@ -44,7 +48,8 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   #now simulated seal population 
   ages <- (min(Seal_life_hist$Age):max(Seal_life_hist$Age))+1  #we'll start age at 1
   n.ages= max(ages)-min(ages)+1
-  ageSurv <- survCurv <- phi_RAW(a.haz,b.haz,c.haz,haz.mult,c(1:38))
+  #ageSurv <- survCurv <- phi_RAW(a.haz,b.haz,c.haz,haz.mult,c(1:38))
+  ageSurv <- survCurv <- phi_RAW(a.haz,b.haz,c.haz,haz.mult=1,c(1:38))
   ageMort <- 1-ageSurv
   ageMort = c(0,ageMort[-length(ageMort)])  #Shane has a prebreeding census; trick it into a postbreeding one
   #S.female=Seal_life_hist$S.female*(1-Seal_life_hist$Harv)
@@ -65,6 +70,10 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   Mat.fem = c(0,Seal_life_hist[1:37,"Mat.fem"]) #add a zero because of delayed implantation
   #Mat.male = c(0,rep(0.5,37))
   #Mat.fem = c(0,rep(0.54,37)) #
+  Mat.fem = 1/(1+exp(-1.264*(c(1:n.ages)-5.424)))  #exponential models fit to bearded seal data
+  Mat.male = 1/(1+exp(-1.868*(c(1:n.ages)-6.5)))
+  Mat.fem[1:2]=0
+  Mat.male[1:2]=0
   
   #age.first.repro = 7
   Leslie = matrix(0,n.ages,n.ages)
@@ -156,10 +165,15 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   #bsamps<- sample_seal_sim( bs2, first_y=31, last_y=50, samp_size=100)
   #bsamps<- sample_seal_sim2( bs2, first_y=first_y_sample, last_y=50, samp_size=c(3,6,35,77,59,88,50,82,102,102,74,154,148,151,124,116,91,135))
   strata_probs = rep(0,100)
-  if(exp.type=="extreme.gradient"){
+  if(exp.type=="refugia"){
     strata_probs[91:100]=0.3
     strata_probs[81:90]=0.2
     strata_probs[71:80]=0.1
+  }
+  if(exp.type=="extreme.gradient"){
+    for(i in 1:10){
+      strata_probs[10*(i-1)+c(1:10)]=0.1*i
+    }
   }
   if(exp.type=="moderate.gradient"){
     for(i in 1:10){
