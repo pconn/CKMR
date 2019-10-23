@@ -5,10 +5,9 @@ n.sims = 100
 n.yrs=n_yrs = 60  #note this is hardwired into sim functions
 first_y_sample = 41
 
-source('c:/users/paul.conn/git/ckmr/r/simulate_spatial.R')
+source('./r/simulate_spatial.R')
 
 
-setwd("c:/users/paul.conn/git/CKMR")
 load("fitbits.RDa")
 library('mvbutils')
 library('debug')
@@ -18,7 +17,7 @@ library('ids')
 source("./R/util_funcs.R")  #more functions from Mark
 
 
-Cenv = load_ADT_DLL(folder='c:/users/paul.conn/git/CKMR/bearded2/x64/debug')
+Cenv = load_ADT_DLL(folder='./bearded2/x64/debug')
 getc = function(x)eval(parse(text=paste0("Cenv$get.",x,"(ck)")))
 
 
@@ -38,7 +37,7 @@ getc = function(x)eval(parse(text=paste0("Cenv$get.",x,"(ck)")))
 SD_eta = c(0.15,0.25,0.5)  #prior sd's  
 Mu_eta = c(-2.904, 0.586, -2.579) #prior means (log-scale RAW survival model) - produced in fit_survival.R
 
-Seal_life_hist = read.csv("c:/users/paul.conn/git/ckmr/sim_inputs.csv",header=T)[1:38,]
+Seal_life_hist = read.csv("./sim_inputs.csv",header=T)[1:38,]
 ages <- (min(Seal_life_hist$Age):max(Seal_life_hist$Age))+1  #we'll start age at 1
 n.ages=n_ages= max(ages)-min(ages)+1
 # Mat.male = c(0,Seal_life_hist[1:37,"Mat.male"])  #add a zero because of delayed implantation

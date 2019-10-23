@@ -26,7 +26,7 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   library('ids')
   
   source("./R/util_funcs.R")  #more functions from Mark
-  source("c:/users/paul.conn/git/fishsim/fishsim/R/fishSim_dev.R")
+  source("./R/fishSim_dev.R")
   
   
   #bearded seal hazard rate pars for RAW model (from Trukhanova at al.)
@@ -43,7 +43,7 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
     exp(-haz.mult*((a.haz*Age)^b.haz + (a.haz*Age)^(1/b.haz) + c.haz - (a.haz*(Age-1))^b.haz - (a.haz*(Age-1))^(1/b.haz) ))
   }
   
-  Seal_life_hist = read.csv("c:/users/paul.conn/git/ckmr/sim_inputs.csv",header=T)[1:38,]
+  Seal_life_hist = read.csv("./sim_inputs.csv",header=T)[1:38,]
   
   #now simulated seal population 
   ages <- (min(Seal_life_hist$Age):max(Seal_life_hist$Age))+1  #we'll start age at 1
@@ -154,7 +154,7 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
   #all_bs$DY <- as.integer( all_bs$DY) # convert "alive" to NA   #this was messed up...DY wrong because it gives the factor level which is unordered!!
   all_bs$DY <- as.integer( as.character(all_bs$DY)) # convert "alive" to NA
   
-  source('c:/users/paul.conn/git/CKMR/R/sim_funcs_Mark.R')
+  source('./R/sim_funcs_Mark.R')
   bs2 <- read_seal_sim( all_bs=all_bs)
   
   # 20 years of sampling--- from last 20 years of simulation
@@ -181,7 +181,7 @@ simulate_spatial <- function(exp.type="constant",dispersal.type="random",init.N=
     }
   }
   if(exp.type=="constant")strata_probs = rep(0.01,100)
-  bsamps<- sample_seal_sim2( bs2, first_y=first_y_sample, last_y=60, samp_size=rep(100,20),strata_probs=strata_probs)
+  bsamps<- sample_seal_sim2( bs2, first_y=first_y_sample, last_y=60, samp_size=rep(samp.size,20),strata_probs=strata_probs)
   
   get_m_data <- function(samps,nyrs,n.ages){
     m_tas = array(0,dim=c(nyrs,n.ages,2))

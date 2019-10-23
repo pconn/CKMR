@@ -1,4 +1,6 @@
 # plot sampling probability
+library(ggplot2)
+library(RColorBrewer)
 
 Pred1 = Pred2 = Pred3 = Pred4 = expand.grid(Easting=c(1:10),Northing=c(1:10))
 Pred1$Probability=1
@@ -23,24 +25,27 @@ Pred4$Probability=strata_probs/max(strata_probs) #normalize
 
 
 random_plot = ggplot(Pred1)+geom_raster(aes(x=Easting,y=Northing,fill=Probability))+
-  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("A. Random")+
-  scale_fill_continuous(limits=c(0,1))
+  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("A. Spatially uniform")+
+  scale_fill_distiller(limits=c(0,1),palette="BuPu")
 
 random_plot
 
 moderate_plot = ggplot(Pred2)+geom_raster(aes(x=Easting,y=Northing,fill=Probability))+
-  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("B. Moderate")+
-  scale_fill_continuous(limits=c(0,1))
+  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("B. Moderate gradient")+
+  scale_fill_distiller(limits=c(0,1),palette="BuPu")
+
 moderate_plot
 
 extreme_plot = ggplot(Pred3)+geom_raster(aes(x=Easting,y=Northing,fill=Probability))+
-  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("C. Extreme")+
-  scale_fill_continuous(limits=c(0,1))
+  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("C. Extreme gradient")+
+  scale_fill_distiller(limits=c(0,1),palette="BuPu")
+
 extreme_plot
 
 refugia_plot = ggplot(Pred4)+geom_raster(aes(x=Easting,y=Northing,fill=Probability))+
-  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("D. Refugia")+
-  scale_fill_continuous(limits=c(0,1))
+  theme(text=element_text(size=14),plot.title = element_text(hjust = -.1))+ggtitle("D. Spatially restricted")+
+  scale_fill_distiller(limits=c(0,1),palette="BuPu")
+
 refugia_plot
 
 library(grid)

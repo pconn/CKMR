@@ -2,13 +2,13 @@
 
 load('Sim_out_fec.RData')
 
-Disp.type = c("Random","Kernel (all ages)","Kernel (juvenile)","None")
-Exp.type = c('Constant','Moderate gradient','Extreme gradient','Refugia')
+Disp.type = c("Complete mixing","All ages dispersal","Juvenile dispersal","No dispersal")
+Exp.type = c('Spatially uniform','Moderate gradient','Extreme gradient','Spatially restricted')
 
 BiasN_df = data.frame(Dispersal = rep(Disp.type,400),Sampling=rep(rep(Exp.type,each=4),100),
                      Bias = as.numeric((Sim_results[,,,2]-Sim_results[,,,1])/Sim_results[,,,1]))
-BiasN_df$Dispersal <- factor(BiasN_df$Dispersal, levels = c("Random", "Kernel (all ages)", "Kernel (juvenile)","None"))
-BiasN_df$Sampling <- factor(BiasN_df$Sampling, levels = c("Constant", "Moderate gradient", "Extreme gradient","Refugia"))
+BiasN_df$Dispersal <- factor(BiasN_df$Dispersal, levels = Disp.type)
+BiasN_df$Sampling <- factor(BiasN_df$Sampling, levels = Exp.type)
 
 library(ggplot2)
 
@@ -62,6 +62,7 @@ n_sims=100
 n_ages=12
 Ages = c(1:n_ages)
 Sex = c("Female","Male")
+#Disp.type = c("Complete mixing","Limited (all ages)","Limited (juv. only)","Sessile")
 n_rows = n_sims * n_ages * 2 * length(Exp.type) * length(Disp.type)
 Fec_df = data.frame(Age=rep(1:n_ages,2*n_sims*length(Exp.type)*length(Disp.type)),Fecundity=rep(0,n_rows),Dispersal=rep(0,n_rows),Sampling=rep(0,n_rows),Sex=rep(0,n_rows),Sim=rep(0,n_rows))
 counter = 1
@@ -91,10 +92,10 @@ Prior_mean$Fecundity[n_ages+c(1:2)]=0
 
 pdf("Fec_results.pdf")
 ggplot() + geom_line(data=Fec_df,aes(x=Age,y=Fecundity,color=Sex,group=Sim),alpha=0.08) + facet_grid(Dispersal~Sampling) +
-   geom_line(data=Mean.df,aes(x=Age,y=Fecundity,color=Sex),size=1.2)+
-  geom_line(data=Prior_mean,aes(x=Age,y=Fecundity,group=Group),size=1,color='black')+
+   geom_line(data=Mean.df,aes(x=Age,y=Fecundity,group=Sex),linetype='dashed',color='black',size=0.8)+
+  geom_line(data=Prior_mean,aes(x=Age,y=Fecundity,group=Group),size=.8,color='black')+
   scale_color_manual(values=c("#E69F00", "#56B4E9"))+theme(text = element_text(size=13))+
-  scale_x_continuous(limits=c(1, 11.5)) 
+  scale_x_continuous(limits=c(1, 11.5)) + guides(colour = guide_legend(override.aes = list(alpha = 1,size=1.2)))
 dev.off()
 
 
@@ -194,6 +195,7 @@ for(iboot in 1:n_boot){
 }
 Prior_mean = data.frame(Age = rep(1:n_ages),Survival=rep(0,n_ages))
 Prior_mean$Survival=phi_RAW(a.haz=exp(-2.904),b.haz=1+exp(0.586),c.haz=exp(-2.579),haz.mult=1,c(1:n_ages))
+
 
 pdf("Surv_prior.pdf")
 ggplot() + geom_line(data=Surv_boot_df,aes(x=Age,y=Survival,group=Group),alpha=0.08)+

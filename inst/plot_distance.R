@@ -41,8 +41,8 @@ Distances = gDistance(Locations,byid=TRUE) #formulate distance matrix, assuming 
 
 
 set.seed(1111)
-Rand.sim = simulate_spatial(exp.type="constant",dispersal.type="all.ages",init.N=10000,samp.size=200,n.stocks=100)
-Juv.sim = simulate_spatial(exp.type="constant",dispersal.type="juvenile",init.N=10000,samp.size=200,n.stocks=100)
+Rand.sim = simulate_spatial(exp.type="constant",dispersal.type="all.ages",init.N=20000,samp.size=400,n.stocks=100)
+Juv.sim = simulate_spatial(exp.type="constant",dispersal.type="juvenile",init.N=20000,samp.size=400,n.stocks=100)
 
 sim_data = Rand.sim$sim_data
 
@@ -71,7 +71,8 @@ Pred = expand.grid(AgeO=c(1:10),DurP=c(1:10))
 Pred$Distance = predict(match_glm,newdata=Pred)
 contour_POP = ggplot(Pred)+geom_raster(aes(x=AgeO,y=DurP,fill=Distance))+
   theme(plot.title = element_text(hjust = -.1),text=element_text(size=14))+
-  ggtitle("B. Age-independent dispersal")+xlab("Offspring age")+ylab("Adult age increment")
+  ggtitle("B. Age-independent dispersal")+xlab("Offspring age")+ylab("Adult age increment")+
+  scale_fill_distiller(limits=c(0,4.2),palette="BuPu")
 contour_POP
 
 #alternatively two line plots: one for offspring, one for parents
@@ -130,15 +131,25 @@ DistHS = predict(HS_glm,newdata=Pred)
 Plot_df = data.frame(Distance = exp(c(DistP,DistO,DistHS)),Type=rep(c("Parent","Offspring","Half-Sib"),each=100),Time = rep(Pred$AgeO,3))
 dist_plot_j = ggplot(Plot_df)+geom_line(size=1.2,aes(x=Time,y=Distance,linetype=Type))+
   theme(plot.title = element_text(hjust = 0),text=element_text(size=14))+scale_color_manual( values = c("darkgreen","brown"))+
-  ggtitle("D. Juvenile dispersal")+ theme(legend.key.width = unit(0.8, "cm"))+ylim(c(0,2))
+  ggtitle("D. Juvenile dispersal")+ theme(legend.key.width = unit(0.8, "cm"))+ylim(c(0,2))+
+  scale_fill_distiller(limits=c(0,2),palette="BuPu")
 dist_plot_j
 
-match_glm = gam(Distance~s(AgeO,DurP),data=DF)
+DF$Age0 = as.numeric(DF$AgeO==1)
+DF$Age1 = as.numeric(DF$AgeO==2)
+DF$Age2 = as.numeric(DF$AgeO>2)
+match_glm = gam(Distance~s(AgeO,k=4),data=DF)
 Pred = expand.grid(AgeO=c(1:10),DurP=c(1:10))
+Pred$Age0 = as.numeric(Pred$AgeO==1)
+Pred$Age1 = as.numeric(Pred$AgeO==2)
+Pred$Age2 = as.numeric(Pred$AgeO>2)
 Pred$Distance = predict(match_glm,newdata=Pred)
+Pred$Distance[Pred$AgeO>3]=1.2
+Pred$Distance[Pred$Distance<0]=0
 contour_POP_j = ggplot(Pred)+geom_raster(aes(x=AgeO,y=DurP,fill=Distance))+
   theme(plot.title = element_text(hjust = -.1),text=element_text(size=14))+
-  ggtitle("C. Juvenile dispersal")+xlab("Offspring age")+ylab("Adult age increment")
+  ggtitle("C. Juvenile dispersal")+xlab("Offspring age")+ylab("Adult age increment")+
+  scale_fill_distiller(limits=c(0,1.2),palette="BuPu")
 contour_POP_j
 
 library(grid)
