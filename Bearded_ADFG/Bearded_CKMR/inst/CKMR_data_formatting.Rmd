@@ -1,0 +1,229 @@
+---
+title: "bearded_CKMR_data_munging"
+author: "Paul Conn"
+date: "4/5/2022"
+output: html_document
+bibliography: master_bib.bib
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This document is intended to describe the processes and rationale in transforming bearded seal data provided by ADF&G into a format suitable for analyzing with close-kin mark-recapture (CKMR) models.  These data are almost there, but it will be necessary to (1) remove a few records and reformat data, and (2) formulate posterior distributions for the age of each sample.  We'll describe each of these processes in turn after describing data inputs.
+
+## Source data
+
+The data sets provided by ADF&G include "Samples.csv", "MHS_matches.csv", "PHS_matches.csv", and "POP_matches.csv".  The "Samples.csv" file includes a record for each individual seal, as well as sex, age data, date of kill, village of harvest, and some information from the genetic analysis  The other files provide row indices for maternal half-sibling, paternal half-sibling, and parent-offspring pairs, respectively, as well as a "PLOD" log odds score.  The PLOD score was used in kin finding and may be used to eliminate certain half-sibling pairs from the match list, in the event we try to use a higher PLOD threshold to discriminate matches from non-matches.
+
+## Eliminating individuals
+
+There are several individuals included in "Samples.csv" that we'll likely need to remove from analysis.  However, this means that the row numbers of all individuals below the removed animals in the Samples dataset will change, and we'll want to be able to adjust the various row indices in the various matches files to match updated Sample datasets.  Let's provide a framework for this by attaching individual identifiers to each of the "matches" datasets.
+
+```{r reorder}
+Samples <- read.csv("c:/users/paul.conn/git/ckmr/bearded_adfg/Samples.csv")
+head(Samples)
+
+matches_POP <- read.csv("c:/users/paul.conn/git/ckmr/bearded_adfg/POP_matches.csv")
+matches_MHS <- read.csv("c:/users/paul.conn/git/ckmr/bearded_adfg/MHS_matches.csv")
+matches_PHS <- read.csv("c:/users/paul.conn/git/ckmr/bearded_adfg/PHS_matches.csv")
+matches_POP$IDi = Samples$Our_sample[matches_POP$i]
+matches_POP$IDj = Samples$Our_sample[matches_POP$j]
+matches_MHS$IDi = Samples$Our_sample[matches_MHS$i]
+matches_MHS$IDj = Samples$Our_sample[matches_MHS$j]
+matches_PHS$IDi = Samples$Our_sample[matches_PHS$i]
+matches_PHS$IDj = Samples$Our_sample[matches_PHS$j]
+
+
+Which_remove = unique(grep("LowGene",Samples$Aging.comments))
+Samples_new = Samples[-Which_remove,]
+
+#now reorder i,j based on those remaining
+for(irec in 1:nrow(matches_POP)){
+  matches_POP$i[irec] = which(Samples_new$Our_sample %in% matches_POP$IDi[irec])
+  matches_POP$j[irec] = which(Samples_new$Our_sample %in% matches_POP$IDj[irec])
+}
+for(irec in 1:nrow(matches_MHS)){
+  matches_MHS$i[irec] = which(Samples_new$Our_sample %in% matches_MHS$IDi[irec])
+  matches_MHS$j[irec] = which(Samples_new$Our_sample %in% matches_MHS$IDj[irec])
+}
+for(irec in 1:nrow(matches_PHS)){
+  matches_PHS$i[irec] = which(Samples_new$Our_sample %in% matches_PHS$IDi[irec])
+  matches_PHS$j[irec] = which(Samples_new$Our_sample %in% matches_PHS$IDj[irec])
+}
+  
+```
+
+
+## Age distributions
+
+For each harvested seal, we either need to know its age exactly (for models where age is assumed known), or to specify probabilities that an animal is a particular age (for models where age is assumed uncertain).  Let's assign both definitive ages as well as probability distributions for both types of analyses.
+
+### Certain ages
+
+The 'AgeCombined' field in 'Samples' has mostly been filled in with the best age estimate possible, but there are a few exceptions.  First, one of the POPs indicates that an age 1 male, harvested in 2015, was an offspring of a mother who was killed in 2013.  Clearly, this male (seal EB15PH003) must have been at least a two year old.  We'll thus change it to be 2 instead of 1.  There are also a number of missing AgeCombined values or entries that had missing or *very* uncertain ages (e.g., tooth aging failed and there was only claws to age with which are problematic for older age classes).  Although it seems possible to come up with probability distributions for these animals, deleting them is probably the best choice for an analysis relying on age being certain.  Lets get rid of these, make sure none are involved in kin-pair matches, and readjust kin-pair entries.
+
+```{r certain_age}
+  Samples_certain_age <- Samples_new
+  Samples_certain_age$AgeCombined[which(Samples_new$Our_sample=='EB15PH003')]=2
+  
+  Which_remove = c(which(is.na(Samples_new$AgeCombined)),
+                   which((Samples_new$AgeCombined %% 1)!=0))  #get rid of 0.5 age increments which were used to diagnose aging issues
+  
+  Remove_IDs = Samples_new$Our_sample[Which_remove]
+  Kin_pair_IDs = c(matches_POP$IDi,matches_POP$IDj,matches_MHS$IDi,matches_MHS$IDj,
+                   matches_PHS$IDi,matches_PHS$IDj)
+  which(Remove_IDs %in% Kin_pair_IDs)  #luckily none were involved in kin pair matches
+  Samples_certain_age = Samples_certain_age[-Which_remove]
+  
+  matches_POP_ca = matches_POP
+  matches_MHS_ca = matches_MHS
+  matches_PHS_ca = matches_PHS
+  
+  #now reorder i,j based on those remaining
+  for(irec in 1:nrow(matches_POP)){
+    matches_POP_ca$i[irec] = which(Samples_certain_age$Our_sample %in% matches_POP$IDi[irec])
+    matches_POP_ca$j[irec] = which(Samples_certain_age$Our_sample %in% matches_POP$IDj[irec])
+  }
+  for(irec in 1:nrow(matches_MHS)){
+    matches_MHS_ca$i[irec] = which(Samples_certain_age$Our_sample %in% matches_MHS$IDi[irec])
+    matches_MHS_ca$j[irec] = which(Samples_certain_age$Our_sample %in% matches_MHS$IDj[irec])
+  }
+  for(irec in 1:nrow(matches_PHS)){
+    matches_PHS_ca$i[irec] = which(Samples_certain_age$Our_sample %in% matches_PHS$IDi[irec])
+    matches_PHS_ca$j[irec] = which(Samples_certain_age$Our_sample %in% matches_PHS$IDj[irec])
+  }
+  
+  #list object to export for further analysis
+  CKMR_certain_age = list(Samples=Samples_certain_age,matches_POP=matches_POP_ca,
+                          matches_MHS=matches_MHS_ca, matches_PHS=matches_PHS_ca)
+
+```
+
+
+### Uncertain ages analysis
+
+Although a "certain age" analysis will be informative, it presumably won't do a very good job in
+propagating uncertainty about ages into resulting abundance estimates.  For this reason, our next
+step is to output probability distributions that represent the likely range of age estimates for each animal.  
+
+First, seals with aged teeth were given a uniform distribution over the age range provided by Matson's aging laboratory; however, we admitted the possibility that animals could be up to one year older than this range, since seal harvests occurred over the course of the year and Matson's lab used May as the annual growth reference.  In cases where a month of harvest was provided, we let the probability mass associated with being a year older increase as a function of month (since animals progressively closer to the next May would be likely to be aged a year older).  Specifically, if $\pi_{i,A_i}$ is the probability mass of for the end of the range ($A_i$) provided by Matson labs for seal $i$, we set $\pi_{i,A_{i+}} = m_i \pi_{i,A_i}/12$.  If month of harvest was missing, we set $\pi_{i,A_{i+}}$ to the mean month of harvest (using May, the month where ages were incremented, as 0, this led the mean month to be July); those with "Winter" were assigned January, those with "Spring" were assigned May, those with "Summer" were assigned July, and those with "Fall" were assigned September (note these are not equally spaced, but are most appropriate when considering seasonal changes in the Arctic). 
+
+Second, there were a number of seals that did not have tooth readings but who were aged as pups using claws.  Through an auxiliary study that examined paired tooth and claw readings, pups that had claw age readings of zero we set $\pi_{i,0}=0.85$ and $\pi_{i,1}=0.15$ (that is, we allowed for a 15% probability that these animals were actually one year old).
+
+Finally, we set a number of other seal age distributions on a case by case basis:
+
+* Seal EB20PH002 had two teeth aged, which came back is 2 and 5-6.  For this seal, we used a uniform distribution on [2,6].  
+
+* 13 seals with teeth aged as "0 or 1" were treated as seals that had an age range of 0 to 1 
+
+* Two seals (EB17GAM027 and EB17PH035) had claw ages of 7+ but ambiguous tooth ages; these were assigned a uniform age distribution on [7,40] (40 was the maximum age allowed in CKMR modeling).
+
+* Two seals (EB15PH036 and EB14PH001) had claw ages of 8 or 8+; since claw ages tend to underestimate true ages for older animals, these were assigned a uniform distriubiton on [8,40]
+
+* Ten seals had missing ages ("UNK12GAM014","DIO-045-02","SH-G4-98","2012BS11","2011BS24","SH-G5-98","2014BS22","2011BS37","GM-J02-99","EB16SH006a").  These were assigned uniform distributions on [0,40].
+
+Let's put these ideas into action.
+
+```{r uncertain_age}
+
+  Month = Samples_new$MONTH
+  Month[which(Month=="Spring")]="MAY"
+  Month[which(Month=="Summer")]="JULY"
+  Month[which(Month=="Fall")]="SEP"
+  Month[which(Month=="Winter")]="JAN"
+  Month = replace(Month,Month=="MAY","0")
+  Month = replace(Month,Month=="JUN","1")
+  Month = replace(Month,Month=="JUL","2")
+  Month = replace(Month,Month=="AUG","3")
+  Month = replace(Month,Month=="SEP","4")
+  Month = replace(Month,Month=="OCT","5")
+  Month = replace(Month,Month=="NOV","6")
+  Month = replace(Month,Month=="DEC","7")
+  Month = replace(Month,Month=="JAN","8")
+  Month = replace(Month,Month=="FEB","9")
+  Month = replace(Month,Month=="MAR","10")
+  Month = replace(Month,Month=="AUG","11")
+  Month = as.numeric(Month)
+  mean_month=mean(Month,na.rm=TRUE)
+  Month[which(is.na(Month))]=mean_month
+  
+  Samples_uncertain = Samples_new
+  Samples_uncertain$Month = Month
+
+  n_indiv = nrow(Samples_new)
+  Age_prior = matrix(0,n_indiv,41)
+
+  Which_tooth = which(Samples_new$AgeType=="Tooth")
+  n_tooth = length(Which_tooth)
+  
+  Which_missing = which(is.na(Samples_uncertain$Age1))
+  Samples_uncertain[Which_missing,"Age1"]=Samples_uncertain[Which_missing,"Age2"]=
+    Samples_uncertain[Which_missing,"AgeCombined"]
+  
+  for(i in 1:n_tooth){
+    age1 = Samples_uncertain[Which_tooth[i],"Age1"]
+    age2 = Samples_uncertain[Which_tooth[i],"Age2"]
+    nyrs = age2-age1+1
+    pi_i = 1/(nyrs+Month[Which_tooth[i]]/12)
+    Age_prior[Which_tooth[i],1+c(age1:age2)]=pi_i  #add one since ages go 0:40
+    Age_prior[Which_tooth[i],age2+2]=pi_i*Month[Which_tooth[i]]/12
+  }
+  
+  #age 0 claw ages
+  Which_claw0 = which(Samples_new$AgeType=="Claw" & Samples_new$AgeCombined==0)
+  Age_prior[Which_claw0,1]=0.85
+  Age_prior[Which_claw0,2]=0.15
+  
+  #age 0.5 claw ages (equally likely 0 or 1)
+  Which_claw = which(Samples_new$AgeType=="Claw" & Samples_new$AgeCombined==0.5)
+  Age_prior[Which_claw,1]=0.5
+  Age_prior[Which_claw,2]=0.5
+  
+  #age 7.5
+  Which_7 = which(Samples_new$AgeCombined==7.5)
+  Age_prior[Which_7,8:41]=1/34
+  
+  #age 8.5
+  Which_8 = which(Samples_new$AgeCombined==8.5)
+  Age_prior[Which_8,9:41]=1/33
+  
+  #unknown age
+  Which_na = which(is.na(Samples_new$AgeCombined))
+  Age_prior[Which_na,1:41]=1/41
+  
+  #check to see that all rows sum to one
+  sum(Age_prior)==n_indiv  #should equal n_indiv 
+```
+
+Let's take a look at an example of an aging error "prior."  For example, here's a seal aged with a tooth with a range of 5-6 and a harvest date in July.  Here, most mass is on ages 5 and 6, but there is still a small possibility the seal is aged at 7 given that it was harvested in July (instead of May, when age increments are assumed to occur).
+
+```{r hist1}
+plot(c(0:40),Age_prior[1,],xlab="Age",ylab="Probability mass")
+```
+
+Finally, we'll turn these data into a list for CKMR estimation:
+
+```{r output}
+
+  CKMR_uncertain_age = list(Samples=Samples_uncertain,matches_POP=matches_POP,
+                          matches_MHS=matches_MHS, matches_PHS=matches_PHS,Age_prior=Age_prior)
+
+  save(CKMR_certain_age,CKMR_uncertain_age,file="CKMR_sample_data.RData")
+
+```
+
+
+## A note on prior distributions based on age structure
+
+So far, we have completely ignored the issue of prior distributions based on age structure.  For instance, if we knew nothing about an animals age, it would be much more likely for it to be a young animal than and old animal, simply because older animals must run the gauntlet of survival.  In this case, it would make sense to construct a prior distribution for age where $\pi_a$ (the probability an animal is age $a$) is proportional to $l(a)$, or the probability that animal survives to be age $a$.  However, we prefer not to add this element in to our prior distribution calculations at this stage because we anticipate that survivorship will be partly informed by half-sib data. That is, HSPs will inform the estimation of survival, so that it makes the most sense to do this adjustment within CKMR estimation routines.  In essence, in this writeup we have conducted an analysis with a uniform prior on age, whereas our desired prior depends on survival. We anticipate CKMR models will internally update our priors using
+
+$$ [Age_i | y_i] \propto [y_i | Age_i] [Age_i] $$ 
+
+where $y_i$ gives the aging data used in this writeup, $[y_i | Age_i]$ gives the probability distributions generated in this writeup, and $Age_i$ gives a survival-based prior distribution.
+
+
+
