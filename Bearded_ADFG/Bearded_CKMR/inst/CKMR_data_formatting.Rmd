@@ -1,10 +1,12 @@
 ---
 title: "bearded_CKMR_data_munging"
 author: "Paul Conn"
-date: "4/5/2022"
-output: html_document
+date: "5/2/2022"
+output:
+  pdf_document: default
+  html_document: default
 bibliography: master_bib.bib
-link-citations: true
+link-citations: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -21,7 +23,7 @@ The data sets provided by ADF&G include "Samples.csv", "MHS_matches.csv", "PHS_m
 
 ## Eliminating individuals
 
-There are several individuals included in "Samples.csv" that we'll likely need to remove from analysis.  However, this means that the row numbers of all individuals below the removed animals in the Samples dataset will change, and we'll want to be able to adjust the various row indices in the various matches files to match updated Sample datasets.  Let's provide a framework for this by attaching individual identifiers to each of the "matches" datasets.
+There are several individuals included in "Samples.csv" that we'll likely need to remove from analysis.  However, this means that the row numbers of all individuals below the removed animals in the Samples dataset will change, and we'll want to be able to adjust the various row indices in the various matches files to match updated Sample datasets.  Let's provide a framework for this by attaching individual identifiers to each of the "matches" datasets.  We'll then remove some duplicates and at one individual missing a year of harvest.
 
 ```{r reorder}
 Samples <- read.csv("c:/users/paul.conn/git/ckmr/bearded_adfg/Samples.csv")
@@ -38,7 +40,7 @@ matches_PHS$IDi = Samples$Our_sample[matches_PHS$i]
 matches_PHS$IDj = Samples$Our_sample[matches_PHS$j]
 
 
-Which_remove = unique(grep("LowGene",Samples$Aging.comments))
+Which_remove = c(unique(grep("LowGene",Samples$Aging.comments)),which(is.na(Samples$YEAR)))
 Samples_new = Samples[-Which_remove,]
 
 #now reorder i,j based on those remaining
@@ -57,27 +59,87 @@ for(irec in 1:nrow(matches_PHS)){
   
 ```
 
+## Newborn pups vs yearlings
+
+One issue is that there are many individuals harvested in the spring that are recorded as age '0' but when examining further notes it is possible to determine that they are either weeks old or 11 months old.  Since we anticipate employing a population model with a postbreeding census with an annual time step that 
+occurs on May 1, we'll want to adjust the month of harvest for the 'weeks old' ones so that they are harvested in May (to be associated with that years cohort), and to adjust the 11 month old ones so that they're harvested in April (so that they are associated with the previous years cohort).
+
+First, we'll treat 0 year old observations recorded by Lara Horstmann as if they are truly "weeks old" since weeks vs. 11 month old determinations are not available for these.  Based on the time samples were collected, this is clearly the most likely option. Using this approach, here are eight newborn pups that are harvested in April - for these we will shift the month of harvest to May.  There are also 3 individuals harvested in May that have an age of "11 months" - we'll adjust these to have a harvest in April so that they're associated with the previous years cohort.
+
+```{r newborns}
+  Pup_data = read.csv("c:/users/paul.conn/git/CKMR/bearded_adfg/Spring_pups_info.csv",header=TRUE)
+  Pup_data$Adjusted.aging.comments[which(Pup_data$Adjusted.aging.comments=="weeks")]="Weeks" 
+  Which_Lara = grep("Lara",Pup_data$Adjusted.aging.comments)
+  Pup_data[Which_Lara,"Adjusted.aging.comments"]="Weeks"
+  Newborns_april = which(Pup_data$MONTH=="APR" & Pup_data$Adjusted.aging.comments=="Weeks")
+  Which_new = which(Samples_new$Our_sample %in% Pup_data$Our_sample[Newborns_april])
+  Samples_new[Which_new,"MONTH"]="MAY"
+  Yearlings_may = which(Pup_data$MONTH=="MAY" & Pup_data$Adjusted.aging.comments=="11 months")
+  Which_yearling = which(Samples_new$Our_sample %in% Pup_data$Our_sample[Yearlings_may])
+  Samples_new[Which_yearling,"MONTH"]="APR"
+
+```
+
+## Uncertain months
+
+In most cases a month of harvest was specified, but in others it was not.  Let's specify
+a month for those that are missing or are inexact (e.g., "Winter").  Since our annual time step is May 1, we'll index May by month 0, and April by month 11.  Given this time step, we'll also associate harvests made January - April with the previous year. 
+
+```{r date}
+  Month = Samples_new$MONTH
+  Month[which(Month=="Spring")]="MAY"
+  Month[which(Month=="Summer")]="JULY"
+  Month[which(Month=="Fall")]="SEP"
+  Month[which(Month=="Winter")]="JAN"
+  Month = replace(Month,Month=="MAY","0")
+  Month = replace(Month,Month=="JUN","1")
+  Month = replace(Month,Month=="JUL","2")
+  Month = replace(Month,Month=="AUG","3")
+  Month = replace(Month,Month=="SEP","4")
+  Month = replace(Month,Month=="OCT","5")
+  Month = replace(Month,Month=="NOV","6")
+  Month = replace(Month,Month=="DEC","7")
+  Month = replace(Month,Month=="JAN","8")
+  Month = replace(Month,Month=="FEB","9")
+  Month = replace(Month,Month=="MAR","10")
+  Month = replace(Month,Month=="APR","11")
+  Month = as.numeric(Month)
+  mean_month=mean(Month,na.rm=TRUE)
+  Month[which(is.na(Month))]=mean_month
+  Samples_new$MONTH = Month
+  
+  Which_winter=which(Samples_new$MONTH > 7)
+  Samples_new$YEAR[Which_winter]=Samples_new$YEAR[Which_winter]-1
+```
+  
 
 ## Age distributions
 
-For each harvested seal, we either need to know its age exactly (for models where age is assumed known), or to specify probabilities that an animal is a particular age (for models where age is assumed uncertain).  Let's assign both definitive ages as well as probability distributions for both types of analyses.
+For each harvested seal, we either need to know its age exactly (for models where age is assumed known), or to specify probabilities that an animal is a particular age (for models where age is assumed uncertain).  Let's assign definitive ages as well as probability distributions for both types of analyses.
 
 ### Certain ages
 
-The 'AgeCombined' field in 'Samples' has mostly been filled in with the best age estimate possible, but there are a few exceptions.  First, one of the POPs indicates that an age 1 male, harvested in 2015, was an offspring of a mother who was killed in 2013.  Clearly, this male (seal EB15PH003) must have been at least a two year old.  We'll thus change it to be 2 instead of 1.  There are also a number of missing AgeCombined values or entries that had missing or *very* uncertain ages (e.g., tooth aging failed and there was only claws to age with which are problematic for older age classes).  Although it seems possible to come up with probability distributions for these animals, deleting them is probably the best choice for an analysis relying on age being certain.  Lets get rid of these, make sure none are involved in kin-pair matches, and readjust kin-pair entries.
+The 'AgeCombined' field in 'Samples' has mostly been filled in with the best age estimate possible, but there are a few exceptions, and a few ages that are clearly wrong.  First, one of the POPs indicates that an age 1 male, harvested in 2015, was an offspring of a mother who was killed in 2013.  Clearly, this male (seal EB15PH003) must have been at least a two year old.  We'll thus change it to be 2 instead of 1. Second, one of the maternal half-sibling pairs (siblings with the same mother) had two individuals with the same apparent birth years.  Since bearded seals only have one pup per year,
+this is clearly an error of some kind: either an aging error, or the two are actually a paternal HSP that are "lucky" enough to share mitochondrial DNA.  Of the two, I suspect an aging error is the most probable; for purposes of this particular analysis, we'll change the age of the 6 year old to be 7.  
+
+There are also a number of missing AgeCombined values or entries that had missing or *very* uncertain ages (e.g., tooth aging failed and there was only claws to age with which are problematic for older age classes). Although it seems possible to come up with probability distributions for these animals, deleting them is probably the best choice for an analysis relying on age being certain. There are also about 10 records where the ages were 0 or 1, with the note "age 1 if DOK spring" - these are seals for which month of kill is unknown.  However, since most seals are harvested in the spring or early summer, it is likely that these animals are one year olds (rather than a young-of-year harvested in the winter that might start to have an annuli that looks like a one year old). Lets change these to one-year-olds, get rid of the really uncertain records, make sure none are involved in kin-pair matches, and readjust kin-pair entries.
 
 ```{r certain_age}
   Samples_certain_age <- Samples_new
   Samples_certain_age$AgeCombined[which(Samples_new$Our_sample=='EB15PH003')]=2
+  Samples_certain_age$AgeCombined[which(Samples_new$Our_sample=='EB13PH016')]=7
   
-  Which_remove = c(which(is.na(Samples_new$AgeCombined)),
-                   which((Samples_new$AgeCombined %% 1)!=0))  #get rid of 0.5 age increments which were used to diagnose aging issues
+  Which_01 = which(Samples_certain_age$AgeCombined==0.5)
+  Samples_certain_age$AgeCombined[Which_01]=1
   
-  Remove_IDs = Samples_new$Our_sample[Which_remove]
+  Which_remove = c(which(is.na(Samples_certain_age$AgeCombined)),
+                   which((Samples_certain_age$AgeCombined %% 1)!=0))  #get rid of 0.5 age increments which were used to diagnose aging issues
+  
+  Remove_IDs = Samples_certain_age$Our_sample[Which_remove]
   Kin_pair_IDs = c(matches_POP$IDi,matches_POP$IDj,matches_MHS$IDi,matches_MHS$IDj,
                    matches_PHS$IDi,matches_PHS$IDj)
-  which(Remove_IDs %in% Kin_pair_IDs)  #luckily none were involved in kin pair matches
-  Samples_certain_age = Samples_certain_age[-Which_remove]
+  which(Remove_IDs %in% Kin_pair_IDs)  #none involved in a kin pair
+  Samples_certain_age = Samples_certain_age[-Which_remove,]
   
   matches_POP_ca = matches_POP
   matches_MHS_ca = matches_MHS
@@ -110,7 +172,7 @@ Although a "certain age" analysis will be informative, it presumably won't do a 
 propagating uncertainty about ages into resulting abundance estimates.  For this reason, our next
 step is to output probability distributions that represent the likely range of age estimates for each animal.  
 
-First, seals with aged teeth were given a uniform distribution over the age range provided by Matson's aging laboratory; however, we admitted the possibility that animals could be up to one year older than this range, since seal harvests occurred over the course of the year and Matson's lab used May as the annual growth reference.  In cases where a month of harvest was provided, we let the probability mass associated with being a year older increase as a function of month (since animals progressively closer to the next May would be likely to be aged a year older).  Specifically, if $\pi_{i,A_i}$ is the probability mass of for the end of the range ($A_i$) provided by Matson labs for seal $i$, we set $\pi_{i,A_{i+}} = m_i \pi_{i,A_i}/12$.  If month of harvest was missing, we set $\pi_{i,A_{i+}}$ to the mean month of harvest (using May, the month where ages were incremented, as 0, this led the mean month to be July); those with "Winter" were assigned January, those with "Spring" were assigned May, those with "Summer" were assigned July, and those with "Fall" were assigned September (note these are not equally spaced, but are most appropriate when considering seasonal changes in the Arctic). 
+First, seals with aged teeth were given a uniform distribution over the age range provided by Matson's aging laboratory; however, we admitted the possibility that animals could be up to one year younger or older than this range because our POP data indicated at least one case where the Matson age range was wrong by a year.  Specifically, we set the probability mass for aging one year younger or one year greater equal to 5% of the probability mass associated with the Matson age range.  
 
 Second, there were a number of seals that did not have tooth readings but who were aged as pups using claws.  Through an auxiliary study that examined paired tooth and claw readings, pups that had claw age readings of zero we set $\pi_{i,0}=0.85$ and $\pi_{i,1}=0.15$ (that is, we allowed for a 15% probability that these animals were actually one year old).
 
@@ -130,29 +192,7 @@ Let's put these ideas into action.
 
 ```{r uncertain_age}
 
-  Month = Samples_new$MONTH
-  Month[which(Month=="Spring")]="MAY"
-  Month[which(Month=="Summer")]="JULY"
-  Month[which(Month=="Fall")]="SEP"
-  Month[which(Month=="Winter")]="JAN"
-  Month = replace(Month,Month=="MAY","0")
-  Month = replace(Month,Month=="JUN","1")
-  Month = replace(Month,Month=="JUL","2")
-  Month = replace(Month,Month=="AUG","3")
-  Month = replace(Month,Month=="SEP","4")
-  Month = replace(Month,Month=="OCT","5")
-  Month = replace(Month,Month=="NOV","6")
-  Month = replace(Month,Month=="DEC","7")
-  Month = replace(Month,Month=="JAN","8")
-  Month = replace(Month,Month=="FEB","9")
-  Month = replace(Month,Month=="MAR","10")
-  Month = replace(Month,Month=="AUG","11")
-  Month = as.numeric(Month)
-  mean_month=mean(Month,na.rm=TRUE)
-  Month[which(is.na(Month))]=mean_month
-  
   Samples_uncertain = Samples_new
-  Samples_uncertain$Month = Month
 
   n_indiv = nrow(Samples_new)
   Age_prior = matrix(0,n_indiv,41)
@@ -168,9 +208,16 @@ Let's put these ideas into action.
     age1 = Samples_uncertain[Which_tooth[i],"Age1"]
     age2 = Samples_uncertain[Which_tooth[i],"Age2"]
     nyrs = age2-age1+1
-    pi_i = 1/(nyrs+Month[Which_tooth[i]]/12)
-    Age_prior[Which_tooth[i],1+c(age1:age2)]=pi_i  #add one since ages go 0:40
-    Age_prior[Which_tooth[i],age2+2]=pi_i*Month[Which_tooth[i]]/12
+    if(nyrs==1 & age1==0){ #pup so can't be a year younger
+      Age_prior[Which_tooth[i],1]=0.95
+      Age_prior[Which_tooth[i],2]=0.05
+    }
+    else{  #older than pup
+      pi_i = 1/(nyrs+.1)
+      Age_prior[Which_tooth[i],1+c(age1:age2)]=pi_i  #add one since ages go 0:40
+      Age_prior[Which_tooth[i],age2+2]=pi_i*0.05
+      Age_prior[Which_tooth[i],age1]=pi_i*0.05
+    }
   }
   
   #age 0 claw ages
@@ -199,7 +246,7 @@ Let's put these ideas into action.
   sum(Age_prior)==n_indiv  #should equal n_indiv 
 ```
 
-Let's take a look at an example of an aging error "prior."  For example, here's a seal aged with a tooth with a range of 5-6 and a harvest date in July.  Here, most mass is on ages 5 and 6, but there is still a small possibility the seal is aged at 7 given that it was harvested in July (instead of May, when age increments are assumed to occur).
+Let's take a look at an example of an aging error "prior."  For example, here's a seal aged with a tooth with a range of 5-6 and a harvest date in July.  Here, most mass is on ages 5 and 6, but there is still a small possibility the seal is aged at 4 or 7.
 
 ```{r hist1}
 plot(c(0:40),Age_prior[1,],xlab="Age",ylab="Probability mass")
