@@ -1,7 +1,7 @@
 ---
 title: "Bearded seal CKMR modeling"
 author: "Paul Conn"
-date: "5/2/2022"
+date: "5/6/2022"
 output:
   pdf_document: default
   html_document: default
@@ -126,7 +126,7 @@ $$
 where the "2" subscript simply denotes that data, success probabilities, and constraints
 are particular to HSPs.  In this case, we never directly observe the common parent, although we assume that we know what sex it is since maternally related HSPs share mitochondrial DNA. Technically, it is possible that paternally related HSPs could have the same mitochondrial DNA by random chance, though this is a low probability (e.g, $\approx 1\%$) because mitochondrial haplotype diversity is quite high.  For HSPs, we require that $I_2(i,j)=0$ whenever $b_i > b_j$ to prevent double counting. 
 
-Success probabilities s$p_{ij2}$ once again reflect relative reproductive output, but we must sum over possible parent ages since we never observe the parent directly.  Also, the prospective parent must survive from $b_i \rightarrow b_j$ (for females), and from $b_{i-1} \rightarrow b_{j-1}$ for males.  Once again, we need to have age restrictions to prevent the potential parent from achieving an age $\ge 40$ where parameters are undefined.  Letting $\delta_{ij} = b_j - b_i$ and doing some algebra, we have
+Success probabilities $p_{ij2}$ once again reflect relative reproductive output, but we must sum over possible parent ages since we never observe the parent directly.  Also, the prospective parent must survive from $b_i \rightarrow b_j$ (for females), and from $b_{i-1} \rightarrow b_{j-1}$ for males.  Once again, we need to have age restrictions to prevent the potential parent from achieving an age $\ge 40$ where parameters are undefined.  Letting $\delta_{ij} = b_j - b_i$ and doing some algebra, we have
 
 $$
 p_{ij2} = \begin{cases}
@@ -135,7 +135,7 @@ p_{ij2} = \begin{cases}
 \end{cases}
 $$
 
-The indicator $I_{ij}=1$ if $\delta_{ij}>0$ and is used to disallow maternal MHPs from occurring if birth years of the prospective kin pairs are the same (since females only have one pup per year). For males, whenever $\delta_{ij}=0$, we set $\prod_{c=a}^{a+\delta_{ij}-1} \phi_c = 1.0$.  
+The indicator $I_{ij}=1$ if $\delta_{ij}>0$ and is used to disallow maternal MHPs from occurring if birth years of the prospective kin pairs are the same (since females only have one pup per year). For males, whenever $\delta_{ij} = 0$, we set $\prod_{c=a}^{a+\delta_{ij}-1} \phi_c = 1.0$.  
 
 The last two terms in the integrated pseudo likelihood are $f(\boldsymbol{\eta})$ and $\Lambda_\lambda$. For $f(\boldsymbol{\eta})$, I specified independent Gaussian prior distributions for RAW parameters, with a mean set to the values estimated from hierarchical meta-analysis [@TrukhanovaEtAl2018], and with a standard deviation set so as to achieve a coefficient of variation (CV) of approximately 0.2 on the real scale.  For $\Lambda_\lambda$, I set a Gaussian penalty on the realized finite rate of population growth $\lambda$, such that $\lambda \sim \text{Normal}(1.0,10^{-8})$. Log link functions were used on all parameters (abundance, RAW parameters) to constrain real-valued estimates to be $>0$.
 
@@ -239,9 +239,9 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   #Random= c("log_eta1","log_eta2","log_eta3")
   Random=NULL
 
-  save.image("TMB_workspace.RData")
+  save.image("TMB_workspace_1gen.RData")
   
-  load("TMB_workspace.RData")
+  load("TMB_workspace_1gen.RData")
   Random=NULL
   library(TMB)
   getwd()
@@ -288,7 +288,7 @@ factors contributing to this conclusion:
 
 -Despite slightly greater probabilities of HSPs for females relative to males, there were only 
 `r sum(Data$n_match_MHS_bibj)` maternal HSPs compared to `r sum(Data$n_match_PHS_bibj)` males.  
-By contrast, conditional on estimated parameters, the number of expected maternal half-sibling pairs was `r sum(Data$n_comp_HS_bibj*Report$MHS_table)` and the number of expected paternal HSPs was `r sum(Data$n_comp_HS_bibj*Report$PHS_table)`.  A binomial CDF test with equal probability of PHS and MHS gives a p-value of `r `sum(dbinom(0:8,25,0.5)`, suggesting some evidence for increased paternal HSPs above and beyond what we would expect by random chance.  Heterogeneity in reproductive success of sexually mature males would also tend to inflate HSP matches and result in lower abundance estimates.
+By contrast, conditional on estimated parameters, the number of expected maternal half-sibling pairs was `r sum(Data$n_comp_HS_bibj*Report$MHS_table)` and the number of expected paternal HSPs was `r sum(Data$n_comp_HS_bibj*Report$PHS_table)`.  A binomial CDF test with equal probability of PHS and MHS gives a p-value of `r sum(dbinom(0:8,25,0.5))`, suggesting some evidence for increased paternal HSPs above and beyond what we would expect by random chance.  Heterogeneity in reproductive success of sexually mature males would also tend to inflate HSP matches and result in lower abundance estimates.
 
 -We haven't yet removed any half sibs with low PLOD scores.  There is thus the possibility that the number of half-sib matches is too high because of contamination by lower order kin.  This would also negatively bias our abundance estimator.
 
@@ -299,14 +299,20 @@ Our initial estimate is also likely too precise, both because of the above facto
 
 Although there were relatively few comparisons with birth gaps long enough to actually be grandparent-grandchild pairs (GGPs), it would probably be worth accounting for this possibility, especially since the absence of grandparent-granchild pairs could also be informative.  In order to account for GGPs, we can model apparent HSPs as a mixture of
 HSPs and GGPs.  This works differently for comparisons that share the same mitochondrial haplotype vs. 
-those that don't.  In particular, if the older animal is female, there is only a $\approx 50\%$ chance that GGPs will share mitochondrial DNA since the (unobserved) mother must also be female.  If the older animal is male, there is only a very small chance that the two are GGPs if they share mtDNA, and are more likely MHSPs.  For purposes of bearded seals, we'll start by grouping apparent half-sibling comparisons by the sex of the older individual (for same-age comparisons, the sex of an arbirtrary seal is chosen):
+those that don't.  In particular, if the older animal is female, there is only a $\approx 50\%$ chance that GGPs will share mitochondrial DNA since the (unobserved) mother must also be female, as shown in this cartoon:  
 
-```{r,GGP_comps,tidy='styler',cache=T,include=FALSE}
-  n_comp_m_HS_bibj = n_comp_f_HS_bibj = n_match_m_PHS_bibj= n_match_m_MHS_bibj = n_match_f_PHS_bibj=    
-   n_match_f_MHS_bibj = = matrix(0,n_ages+n_yrs_data,n_ages+n_yrs_data) #years 41:(80+n_yrs_data)
-  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_ages+n_yrs_data,n_yrs_data,n_ages+n_yrs_data))
+![](c:/users/paul.conn/git/ckmr/bearded_adfg/bearded_ckmr/images/GGP.png).
 
-  #determine birth year, death year relative to comparison, match data structures (index 1 = year 41 of pop model)
+Here, the green DNA bits show inheritance of mtDNA, with green mtDNA being identical to that possessed by the grandparent.
+Importantly, if the potential grandparent is male, the chance that the GGP shares mtDNA is negligible (this would not be the case in populations with low mtDNA haplotype diversity).
+  For purposes of bearded seals, we'll start by grouping apparent half-sibling comparisons by the sex of the older individual (for same-age comparisons, the sex of an arbirtrary seal is chosen):
+
+```{r,GGP_comps,tidy='styler',cache=T}
+  n_comp_m_HS_bibj = n_comp_f_HS_bibj = n_match_m_PHS_bibj= n_match_m_MHS_bibj = n_match_f_PHS_bibj=  
+   n_match_f_MHS_bibj = matrix(0,n_yrs,n_yrs) # first letter denotes whether older animal male ('m') or female ('f')
+  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_yrs,n_yrs_data,n_yrs))
+
+  #determine birth year, death year relative to comparison, match data structures 
   BY = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1-CKMR_certain_age$Samples$AgeCombined
   DY = CKMR_certain_age$Samples$YEAR-min_yr+1
   DY2 = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1 #for making comparisons with BY
@@ -317,27 +323,76 @@ those that don't.  In particular, if the older animal is female, there is only a
   for(iseal in 1:(n_seals-1)){
     for(jseal in (iseal+1):n_seals){  #prevent double counting
       if(BY[iseal]<BY[jseal]){
-        n_comp_HS_bibj[BY[iseal],BY[jseal]]=n_comp_HS_bibj[BY[iseal],BY[jseal]]+1
+        if(Sex[iseal]=="M")n_comp_m_HS_bibj[BY[iseal],BY[jseal]]=n_comp_m_HS_bibj[BY[iseal],BY[jseal]]+1
+        else n_comp_f_HS_bibj[BY[iseal],BY[jseal]]=n_comp_f_HS_bibj[BY[iseal],BY[jseal]]+1
         if(DY2[iseal]>=(BY[jseal]-1) & Sex[iseal]=="M")
           n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no comprison needed for potential father that die before offspring conceived
         if(DY2[iseal]>=(BY[jseal]) & Sex[iseal]=="F")
           n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no 
       } 
       if(BY[iseal]>BY[jseal]){
-        n_comp_HS_bibj[BY[jseal],BY[iseal]]=n_comp_HS_bibj[BY[jseal],BY[iseal]]+1 
+        if(Sex[jseal]=="M")n_comp_m_HS_bibj[BY[jseal],BY[iseal]]=n_comp_m_HS_bibj[BY[jseal],BY[iseal]]+1
+        else n_comp_f_HS_bibj[BY[jseal],BY[iseal]]=n_comp_f_HS_bibj[BY[jseal],BY[iseal]]+1
         if(DY2[jseal]>=(BY[iseal]-1) & Sex[jseal]=="M")
           n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no comprison needed for potential father that die before offspring conceived
         if(DY2[jseal]>=(BY[iseal]) & Sex[jseal]=="F")
           n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no 
       }
       # we'll include comparisons for equal BYs for HSPs since theyr'e possible for PHSPs; we'll need to make probs
-      # 0 for MHSPs since only one pup/yr
-      if(BY[iseal]==BY[jseal])n_comp_HS_bibj[BY[iseal],BY[jseal]]=n_comp_HS_bibj[BY[iseal],BY[jseal]]+1
+      # 0 for MHSPs since only one pup/yr 
+      if(BY[iseal]==BY[jseal]){
+        if(Sex[iseal]=="M")n_comp_m_HS_bibj[BY[iseal],BY[jseal]]=n_comp_m_HS_bibj[BY[iseal],BY[jseal]]+1
+        else n_comp_f_HS_bibj[BY[iseal],BY[jseal]]=n_comp_f_HS_bibj[BY[iseal],BY[jseal]]+1
+      }  
     }
   }
+```
 
+We'll need to reformulate our .cpp TMB file to account for updated half-sib/GGP probabilities.  There are four different possibilities, associated with whether (1) the sex of the parent, and (2) whether or not the two individuals compared share mitochondrial DNA.  Let's first describe what the probability of a GGP is for these cases, before describing combined probabilities (GGP + HSP).  To do this, let $s_i$ denote sex of the older seal (with $s_i=1$ if $i$ is male), and $M_{ij}$ be a binary covariate that takes on the value 1 if indivduals $i$ and $j$ share mtDNA.
 
+**Case 1:** $s_i = 0, M_{ij}=1 $
 
+We'll denote the probability of a GGP that shares mitochondrial when the $s_i=0$ as 
+$Pr(GGP|M_i=1,s_i=0)$.  Note that in our case we assume this can *only* happen if the unobserved parent is female.  Accordingly,
+
+$$
+Pr(GGP | M_{ij}=1,s_i=0) = \sum_{t=b_i}^{\min(d_i,b_j)} \frac{f_{t-b_i}}{\sum_a  f_a N_{t,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} f_{b_j-t}}{\sum_a f_a N_{b_j,a}}
+$$
+
+Note that in this case, the parent must be female and must survive to the time of $i$'s birth.  Relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the parent's birth.  For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival, etc.
+
+**Case 2:** $s_i = 0, M_{ij}=0 $
+
+The only way for this to happen is if the unobserved parent is male, so our answer will be similar but will involve male maturity-at-age indexed to the year before $j$'s birth:
+
+$$
+Pr(GGP | M_{ij}=0,s_i=0) = \sum_{t=b_i}^{\min(d_i,b_j-1)} \frac{f_{t-b_i}}{\sum_a  f_a N_{t,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+$$
+
+**Case 3:** $s_i = 1, M_{ij}=1 $
+
+Now we're on to the males.  This one is easy; by assumption we assume that Pr(GGP | $M_{ij}=1,s_i=1)=0$ for reasons stated previously.
+
+**Case 4:** $s_i = 1, M_{ij}=0 $
+
+This case can happen whether the offspring of $i$ is male or female, so we have to account for both.  Fortunately, it is very similar to what we have written already, though it involves male maturity in the year previous to the birth of the prospective parent:
+
+$$
+\begin{aligned}
+Pr(GGP | M_{ij}=0,s_i=1) &=  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}}{\sum_a  m_a N_{t-1,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} f_{b_j-t}}{\sum_a f_a N_{b_j,a}} \\
+  &+ 
+  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}}{\sum_a  m_a N_{t-1,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+\end{aligned}
+$$
+
+  
+  
+  
+  
 ### Investigating alternative thresholds
 
 

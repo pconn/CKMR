@@ -197,7 +197,7 @@ Type objective_function<Type>::operator() ()
 
   // //priors / penalty
   Type lambda = pow(N_a.row(n_yrs-1).sum()/N_a.row(0).sum(),1.0/(n_yrs-1));
-  logl -= 0.5 * pow((lambda-1.0)/0.00000001,2.0);  //stable pop prior; log(kernel of normal pdf)
+  logl -= 0.5 * pow((lambda-1.0)/0.00001,2.0);  //stable pop prior; log(kernel of normal pdf)
   //logl -= 0.5 * pow((log_eta1-mu_log_eta1)/sd_log_eta1,2.0);
   //logl -= 0.5 * pow((log_eta2-mu_log_eta2)/sd_log_eta2,2.0);
   //logl -= 0.5 * pow((log_eta3-mu_log_eta3)/sd_log_eta3,2.0);

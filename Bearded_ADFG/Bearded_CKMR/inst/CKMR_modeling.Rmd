@@ -139,7 +139,7 @@ The indicator $I_{ij}=1$ if $\delta_{ij}>0$ and is used to disallow maternal MHP
 
 The last two terms in the integrated pseudo likelihood are $f(\boldsymbol{\eta})$ and $\Lambda_\lambda$. For $f(\boldsymbol{\eta})$, I specified independent Gaussian prior distributions for RAW parameters, with a mean set to the values estimated from hierarchical meta-analysis [@TrukhanovaEtAl2018], and with a standard deviation set so as to achieve a coefficient of variation (CV) of approximately 0.2 on the real scale.  For $\Lambda_\lambda$, I set a Gaussian penalty on the realized finite rate of population growth $\lambda$, such that $\lambda \sim \text{Normal}(1.0,10^{-8})$. Log link functions were used on all parameters (abundance, RAW parameters) to constrain real-valued estimates to be $>0$.
 
-To fit this model, I programmed the log-likelihood in Template Model Builder (TMB; [@KristensenEtAl2016]). Conditioning on observed kinship observations (i.e., the $y_{ijk}$), I then minimized it as a function of bearded seal abundance using the "nlminb" function in R [@RTeam2017].  Some computational efficiency is gained by noting that many of the pairwise kinship probabilities are the same (e.g., for individuals of the same sex and with the same birth years and year of death) and grouping pairs this way. Modeling these sufficient statistics prevents us from having to do $n^2$ separate comparison computations every time the likelihood is evaluated (though pairwise comparisons may be easier to implement in ageing error models).   Here is code to build and fit a "certain age" CKMR model to bearded seal data.  We will start our population model one generation (40 years) prior to data collection beginss to allow us to model relative reproductive output of parents of half-siblings that are encountered near the beginning of the study.
+To fit this model, I programmed the log-likelihood in Template Model Builder (TMB; [@KristensenEtAl2016]). Conditioning on observed kinship observations (i.e., the $y_{ijk}$), I then minimized it as a function of bearded seal abundance using the "nlminb" function in R [@RTeam2017].  Some computational efficiency is gained by noting that many of the pairwise kinship probabilities are the same (e.g., for individuals of the same sex and with the same birth years and year of death) and grouping pairs this way. Modeling these sufficient statistics prevents us from having to do $n^2$ separate comparison computations every time the likelihood is evaluated (though pairwise comparisons may be easier to implement in ageing error models).   Here is code to build and fit a "certain age" CKMR model to bearded seal data.  We will start our population model two generations (80 years) prior to data collection beginss to allow us to model relative reproductive output of parents of half-siblings that are encountered near the beginning of the study.
 
 ```{r,tmb,tidy='styler',cache=T,include=FALSE}
   load('CKMR_sample_data.RData')
@@ -147,15 +147,15 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   min_yr = min(CKMR_certain_age$Samples$YEAR)
   max_yr = max(CKMR_certain_age$Samples$YEAR)
   n_yrs_data = max_yr-min_yr+1
-  n_yrs = n_yrs_data+n_ages  #number of years of data + 1 generation time
+  n_yrs = n_yrs_data+n_ages*2  #number of years of data + 2 generation times
   n_seals = nrow(CKMR_certain_age$Samples)
   
   #sufficient statistics for binomial model instead of bernoulli - number of trials, number of successes
   #observed birth years can only be one generation back so we'll start these off in year 41
-  n_comp_HS_bibj = n_match_PHS_bibj= n_match_MHS_bibj= matrix(0,n_yrs,n_yrs) 
-  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_yrs,n_yrs_data,n_yrs))
+  n_comp_HS_bibj = n_match_PHS_bibj= n_match_MHS_bibj= matrix(0,n_ages+n_yrs_data,n_ages+n_yrs_data) #years 41:(80+n_yrs_data)
+  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_ages+n_yrs_data,n_yrs_data,n_ages+n_yrs_data))
 
-  #determine birth year, death year relative to comparison, match data structures 
+  #determine birth year, death year relative to comparison, match data structures (index 1 = year 41 of pop model)
   BY = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1-CKMR_certain_age$Samples$AgeCombined
   DY = CKMR_certain_age$Samples$YEAR-min_yr+1
   DY2 = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1 #for making comparisons with BY
@@ -239,15 +239,15 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   #Random= c("log_eta1","log_eta2","log_eta3")
   Random=NULL
 
-  save.image("TMB_workspace.RData")
+  save.image("c:/users/paul.conn/git/CKMR/bearded_ADFG/TMB_workspace.RData")
   
-  load("TMB_workspace.RData")
+  load("c:/users/paul.conn/git/CKMR/bearded_ADFG/TMB_workspace.RData")
   Random=NULL
   library(TMB)
   getwd()
-  TmbFile = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_1gen.cpp"
+  TmbFile = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages.cpp"
   compile(TmbFile )
-  TmbExec="c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_1gen"
+  TmbExec="c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages"
   dyn.load(dynlib(TmbExec))
 
   
@@ -288,53 +288,13 @@ factors contributing to this conclusion:
 
 -Despite slightly greater probabilities of HSPs for females relative to males, there were only 
 `r sum(Data$n_match_MHS_bibj)` maternal HSPs compared to `r sum(Data$n_match_PHS_bibj)` males.  
-By contrast, conditional on estimated parameters, the number of expected maternal half-sibling pairs was `r sum(Data$n_comp_HS_bibj*Report$MHS_table)` and the number of expected paternal HSPs was `r sum(Data$n_comp_HS_bibj*Report$PHS_table)`.  A binomial CDF test with equal probability of PHS and MHS gives a p-value of `r `sum(dbinom(0:8,25,0.5)`, suggesting some evidence for increased paternal HSPs above and beyond what we would expect by random chance.  Heterogeneity in reproductive success of sexually mature males would also tend to inflate HSP matches and result in lower abundance estimates.
+By contrast, conditional on estimated parameters, the number of expected maternal half-sibling pairs was `r sum(Data$n_comp_HS_bibj*Report$MHS_table)` and the number of expected paternal HSPs was `r sum(Data$n_comp_HS_bibj*Report$PHS_table)`
+
+A binomial CDF test with equal probability of PHS and MHS gives a p-value of 0.054, suggesting some evidence for increased paternal HSPs above and beyond what we would expect by random chance.  Heterogeneity in reproductive success of sexually mature males would also tend to inflate HSP matches and result in lower abundance estimates.
 
 -We haven't yet removed any half sibs with low PLOD scores.  There is thus the possibility that the number of half-sib matches is too high because of contamination by lower order kin.  This would also negatively bias our abundance estimator.
 
-Our initial estimate is also likely too precise, both because of the above factors and because we haven't appropriately accommodated aging uncertainty.  These shall be the next focuses of our modeling efforts.
-
-
-### Accounting for grandparent-grandchild pairs 
-
-Although there were relatively few comparisons with birth gaps long enough to actually be grandparent-grandchild pairs (GGPs), it would probably be worth accounting for this possibility, especially since the absence of grandparent-granchild pairs could also be informative.  In order to account for GGPs, we can model apparent HSPs as a mixture of
-HSPs and GGPs.  This works differently for comparisons that share the same mitochondrial haplotype vs. 
-those that don't.  In particular, if the older animal is female, there is only a $\approx 50\%$ chance that GGPs will share mitochondrial DNA since the (unobserved) mother must also be female.  If the older animal is male, there is only a very small chance that the two are GGPs if they share mtDNA, and are more likely MHSPs.  For purposes of bearded seals, we'll start by grouping apparent half-sibling comparisons by the sex of the older individual (for same-age comparisons, the sex of an arbirtrary seal is chosen):
-
-```{r,GGP_comps,tidy='styler',cache=T,include=FALSE}
-  n_comp_m_HS_bibj = n_comp_f_HS_bibj = n_match_m_PHS_bibj= n_match_m_MHS_bibj = n_match_f_PHS_bibj=    
-   n_match_f_MHS_bibj = = matrix(0,n_ages+n_yrs_data,n_ages+n_yrs_data) #years 41:(80+n_yrs_data)
-  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_ages+n_yrs_data,n_yrs_data,n_ages+n_yrs_data))
-
-  #determine birth year, death year relative to comparison, match data structures (index 1 = year 41 of pop model)
-  BY = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1-CKMR_certain_age$Samples$AgeCombined
-  DY = CKMR_certain_age$Samples$YEAR-min_yr+1
-  DY2 = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1 #for making comparisons with BY
-  Sex  = CKMR_certain_age$Samples$SexDArT
-  
-  #Now, each bearded seal pairwise comparison will contribute one to # of comparisons matrices; note that comparisons
-  #aren't differentiated by sex for HS, but are for PO because in the latter case we know what sex the potential parent was
-  for(iseal in 1:(n_seals-1)){
-    for(jseal in (iseal+1):n_seals){  #prevent double counting
-      if(BY[iseal]<BY[jseal]){
-        n_comp_HS_bibj[BY[iseal],BY[jseal]]=n_comp_HS_bibj[BY[iseal],BY[jseal]]+1
-        if(DY2[iseal]>=(BY[jseal]-1) & Sex[iseal]=="M")
-          n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no comprison needed for potential father that die before offspring conceived
-        if(DY2[iseal]>=(BY[jseal]) & Sex[iseal]=="F")
-          n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no 
-      } 
-      if(BY[iseal]>BY[jseal]){
-        n_comp_HS_bibj[BY[jseal],BY[iseal]]=n_comp_HS_bibj[BY[jseal],BY[iseal]]+1 
-        if(DY2[jseal]>=(BY[iseal]-1) & Sex[jseal]=="M")
-          n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no comprison needed for potential father that die before offspring conceived
-        if(DY2[jseal]>=(BY[iseal]) & Sex[jseal]=="F")
-          n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no 
-      }
-      # we'll include comparisons for equal BYs for HSPs since theyr'e possible for PHSPs; we'll need to make probs
-      # 0 for MHSPs since only one pup/yr
-      if(BY[iseal]==BY[jseal])n_comp_HS_bibj[BY[iseal],BY[jseal]]=n_comp_HS_bibj[BY[iseal],BY[jseal]]+1
-    }
-  }
+Our initial estimate is also likely too precise, both because of the above factors and because we haven't yet appropriately dealt with aging uncertainty.  These shall be the next focuses of our modeling efforts.
 
 
 
