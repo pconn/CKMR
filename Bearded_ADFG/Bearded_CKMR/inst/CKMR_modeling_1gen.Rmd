@@ -231,7 +231,8 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   }
   
   
-  Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,"Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A, "n_match_PHS_bibj"=n_match_PHS_bibj,"n_match_MHS_bibj"=n_match_MHS_bibj,"n_comp_HS_bibj"=n_comp_HS_bibj,"n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,"n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)))  #SD log multipliers set to achieve approx CV of 0.2 on real scale
+  Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,"Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A, "n_match_PHS_bibj"=n_match_PHS_bibj,"n_match_MHS_bibj"=n_match_MHS_bibj,"n_comp_HS_bibj"=n_comp_HS_bibj,"n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,"n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)),
+            lambda_expect=1.0)  #SD log multipliers set to achieve approx CV of 0.2 on real scale
   
   Params = list("n0_log"=log(20000),"log_eta1"=log(0.055),"log_eta2"=log(2.80),"log_eta3"=log(0.076)) #intial param values
    
@@ -350,7 +351,7 @@ Importantly, if the potential grandparent is male, the chance that the GGP share
 
 We'll need to reformulate our .cpp TMB file to account for updated half-sib/GGP probabilities.  There are four different possibilities, associated with whether (1) the sex of the parent, and (2) whether or not the two individuals compared share mitochondrial DNA.  Let's first describe what the probability of a GGP is for these cases, before describing combined probabilities (GGP + HSP).  To do this, let $s_i$ denote sex of the older seal (with $s_i=1$ if $i$ is male), and $M_{ij}$ be a binary covariate that takes on the value 1 if indivduals $i$ and $j$ share mtDNA.
 
-**Case 1:** $s_i = 0, M_{ij}=1 $
+**Case 1:** $ s_i = 0, M_{ij}=1 $
 
 We'll denote the probability of a GGP that shares mitochondrial when the $s_i=0$ as 
 $Pr(GGP|M_i=1,s_i=0)$.  Note that in our case we assume this can *only* happen if the unobserved parent is female.  Accordingly,
@@ -362,7 +363,7 @@ $$
 
 Note that in this case, the parent must be female and must survive to the time of $i$'s birth.  Relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the parent's birth.  For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival, etc.
 
-**Case 2:** $s_i = 0, M_{ij}=0 $
+**Case 2:** $ s_i = 0, M_{ij}=0 $
 
 The only way for this to happen is if the unobserved parent is male, so our answer will be similar but will involve male maturity-at-age indexed to the year before $j$'s birth:
 

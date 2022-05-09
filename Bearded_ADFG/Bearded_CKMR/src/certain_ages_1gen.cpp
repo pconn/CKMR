@@ -118,6 +118,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(sd_log_eta1);  //sd of eta1 prior
   DATA_SCALAR(sd_log_eta2);  //sd of eta2 prior
   DATA_SCALAR(sd_log_eta3);  //sd of eta3 prior
+  DATA_SCALAR(lambda_expect); // lambda to match during optimization
   
   PARAMETER(n0_log); //number of age 0, year 1
   PARAMETER(log_eta1);
@@ -141,10 +142,14 @@ Type objective_function<Type>::operator() ()
 
   //fill in N-at-age matrix
   matrix<Type> N_a(n_yrs,n_ages);
-  //need some stable stage stuff for year 0;
+  //need some stable stage stuff for year 0
   Type min_n0=10000.0;
   N_a(0,0)=min_n0+exp(n0_log); //try to prevent numerical issues w/ pop crashing during optimization
-  for(int iage=1; iage<n_ages;iage++)N_a(0,iage)=N_a(0,iage-1)*S_a(iage-1);
+  Type lam_power=1.0;
+  for(int iage=1; iage<n_ages;iage++){  //stable stage calc using expected lambda
+    lam_power = lam_power*lambda_expect;  
+    N_a(0,iage)=N_a(0,iage-1)*S_a(iage-1)/lam_power;
+  }
   for(int iyr=1; iyr<n_yrs;iyr++)N_a.row(iyr)=A * N_a.row(iyr-1).transpose();  //double check!!!!
 
   //fill probability lookup tables
@@ -197,7 +202,7 @@ Type objective_function<Type>::operator() ()
 
   // //priors / penalty
   Type lambda = pow(N_a.row(n_yrs-1).sum()/N_a.row(0).sum(),1.0/(n_yrs-1));
-  logl -= 0.5 * pow((lambda-1.0)/0.00001,2.0);  //stable pop prior; log(kernel of normal pdf)
+  logl -= 0.5 * pow((lambda-lambda_expect)/0.00001,2.0);  //pop growth prior; log(kernel of normal pdf)
   //logl -= 0.5 * pow((log_eta1-mu_log_eta1)/sd_log_eta1,2.0);
   //logl -= 0.5 * pow((log_eta2-mu_log_eta2)/sd_log_eta2,2.0);
   //logl -= 0.5 * pow((log_eta3-mu_log_eta3)/sd_log_eta3,2.0);
