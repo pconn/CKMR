@@ -77,6 +77,131 @@ Type get_MHS_prob(int n_ages,int delta_yr,vector<Type> N_a_yri,vector<Type> N_a_
   return 2.0*cum_prob/(rel_repro1*rel_repro2);  
 }
 
+template<class Type>  //this is prob of GGP when older animal is female and the two animals share mtDNA
+Type get_f_mt_GGP_prob(int n_ages,int bi, int bj, int di, int min_repro_fem,matrix<Type>N_a,vector<Type>S_a,vector<Type>f_a){
+  int delta_yr = bj-bi;
+  int min_repro_gap = 2.0*(min_repro_fem);
+  Type tot_prob = 0.0;
+  if(delta_yr>=min_repro_gap && di>=(bj-min_repro_fem)){  //GGP can only happen if there's time for two generations and of Grandmother lives to time of mother's first possible birth
+    Type phi = 1.0;
+    Type cum_prob = 0.0;
+    Type tot_repro_k = 0.0;
+    Type tot_repro_j = 0.0;
+    vector<Type> N_a_yrk;
+    vector<Type> N_a_yrj = N_a.row(bj);   
+    int lower = bi+min_repro_fem;  //first year mother's birth possible
+    int upper = std::min(di,bj-min_repro_fem);  //last year mother's birth possible
+    for(int ia=0;ia<n_ages;ia++){
+      tot_repro_j += N_a_yrj(ia)*f_a(ia);  
+    }
+    for(int ibk=lower;ibk<=upper;ibk++){  //sum over years of possible mom's birth
+      tot_repro_k = 0;
+      N_a_yrk = N_a.row(ibk);
+        for(int ia=0;ia<n_ages;ia++){
+          tot_repro_k += N_a_yrk(ia)*f_a(ia);
+        }
+      phi=1.0;
+      for(int iak=0;iak<(bj-ibk);iak++)phi=phi*S_a(iak); //cum survival of mom through year prior to j's birth
+      tot_prob += f_a(ibk-bi)*f_a(bj-ibk)*N_a_yrk(0)*phi/tot_repro_k;
+    }
+    tot_prob = tot_prob * 2.0 / tot_repro_j;    //4/tot_repro_j factors out of summation so multiply that at the end
+  }
+  return(tot_prob);
+}
+
+template<class Type>  //this is prob of GGP when older animal is female and the two animals do not share mtDNA (parent must be father)
+Type get_f_nomt_GGP_prob(int n_ages,int bi, int bj, int di, int min_repro_fem,int min_repro_male,matrix<Type>N_a,vector<Type>S_a,vector<Type>f_a,vector<Type>m_a){
+  int delta_yr = bj-bi;
+  int min_repro_gap = min_repro_fem+min_repro_male+1;
+  Type tot_prob = 0.0;
+  if(delta_yr>=min_repro_gap && di>=(bj-min_repro_male-1)){  //GGP can only happen if there's time for two generations and of Grandmother lives to time of father's first possible birth
+    Type phi = 1.0;
+    Type cum_prob = 0.0;
+    Type tot_repro_k = 0.0;
+    Type tot_repro_j = 0.0;
+    vector<Type> N_a_yrk;
+    vector<Type> N_a_yrj = N_a.row(bj-1);   
+    int lower = bi+min_repro_fem;  //first year father's birth possible
+    int upper = std::min(di,bj-min_repro_male-1);  //last year father's birth possible
+    for(int ia=0;ia<n_ages;ia++){
+      tot_repro_j += N_a_yrj(ia)*m_a(ia);  
+    }
+    for(int ibk=lower;ibk<=upper;ibk++){  //sum over years of possible father's birth
+      tot_repro_k = 0;
+      N_a_yrk = N_a.row(ibk);
+      for(int ia=0;ia<n_ages;ia++){
+        tot_repro_k += N_a_yrk(ia)*f_a(ia);
+      }
+      phi=1.0;
+      for(int iak=0;iak<(bj-ibk-1);iak++)phi=phi*S_a(iak); //cum survival of dad
+      tot_prob += f_a(ibk-bi)*m_a(bj-ibk-1)*N_a_yrk(0)*phi/tot_repro_k; //can be any of the new males in year k
+    }
+    tot_prob = tot_prob * 2.0 / tot_repro_j;    //2/tot_repro_j factors out of summation so multiply that at the end
+  }
+  return(tot_prob);
+}
+
+template<class Type>  //this is prob of GGP when older animal is male and the two animals do not share mtDNA (parent can be either mother or father)
+Type get_m_nomt_GGP_prob(int n_ages,int bi, int bj, int di, int min_repro_fem,int min_repro_male,matrix<Type>N_a,vector<Type>S_a,vector<Type>f_a,vector<Type>m_a){
+  int delta_yr = bj-bi;
+  //(1) parent is father
+  int min_repro_gap = 2*(min_repro_male+1);
+  Type tot_prob = 0.0;
+  if(delta_yr>=min_repro_gap && di>=(bj-min_repro_male-1)){  //GGP can only happen if there's time for two generations 
+    Type phi = 1.0;
+    Type cum_prob = 0.0;
+    Type tot_repro_k = 0.0;
+    Type tot_repro_j = 0.0;
+    vector<Type> N_a_yrk;
+    vector<Type> N_a_yrj = N_a.row(bj-1);   
+    int lower = bi+min_repro_male+1;  //first year father's birth possible
+    int upper = std::min(di,bj-min_repro_male-1);  //last year father's birth possible
+    for(int ia=0;ia<n_ages;ia++){
+      tot_repro_j += N_a_yrj(ia)*m_a(ia);  
+    }
+    for(int ibk=lower;ibk<=upper;ibk++){  //sum over years of possible father's birth
+      tot_repro_k = 0;
+      N_a_yrk = N_a.row(ibk-1);
+      for(int ia=0;ia<n_ages;ia++){
+        tot_repro_k += N_a_yrk(ia)*m_a(ia);
+      }
+      phi=1.0;
+      for(int iak=0;iak<(bj-ibk-1);iak++)phi=phi*S_a(iak); //cum survival of dad 
+      tot_prob += m_a(ibk-bi-1)*m_a(bj-ibk-1)*N_a_yrk(0)*phi/tot_repro_k;
+    }
+    tot_prob = tot_prob * 2.0 / tot_repro_j;    //4/tot_repro_j factors out of summation multiply that at the end
+  }
+  //(2) parent is mother
+  min_repro_gap = min_repro_male+1+min_repro_fem;
+  Type tot_prob2 = 0.0;
+  if(delta_yr>=min_repro_gap && di>=(bj-min_repro_fem)){  //GGP can only happen if there's time for two generations 
+    Type phi = 1.0;
+    Type cum_prob = 0.0;
+    Type tot_repro_k = 0.0;
+    Type tot_repro_j = 0.0;
+    vector<Type> N_a_yrk;
+    vector<Type> N_a_yrj = N_a.row(bj);   
+    int lower = bi+min_repro_male+1;  //first year mother's birth possible
+    int upper = std::min(di,bj-min_repro_fem);  //last year mother's birth possible
+    for(int ia=0;ia<n_ages;ia++){
+      tot_repro_j += N_a_yrj(ia)*f_a(ia);  
+    }
+    for(int ibk=lower;ibk<=upper;ibk++){  //sum over years of possible mother's birth
+      tot_repro_k = 0;
+      N_a_yrk = N_a.row(ibk-1);
+      for(int ia=0;ia<n_ages;ia++){
+        tot_repro_k += N_a_yrk(ia)*m_a(ia);
+      }
+      phi=1.0;
+      for(int iak=0;iak<(bj-ibk);iak++)phi=phi*S_a(iak); //cum survival of mom 
+      tot_prob2 += m_a(ibk-bi-1)*f_a(bj-ibk)*N_a_yrk(0)*phi/tot_repro_k;
+    }
+    tot_prob2 = tot_prob2 * 2.0 / tot_repro_j;    //4/tot_repro_j factors out of summation multiply that at the end
+  }
+  tot_prob = tot_prob+tot_prob2;
+  
+  return(tot_prob);
+}
 
 
 template<class Type>
@@ -105,9 +230,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR( Male_mat );  //male maturity-at-age vector
   DATA_VECTOR(Fem_fec);  //female fecundity-at-age vector
   DATA_MATRIX(A);  //Leslie matrix model (survival will be replaced each likelihood evaluation)
-  DATA_MATRIX(n_match_PHS_bibj); // paternal half sib matches, organized by birth year of oldest, youngest
-  DATA_MATRIX(n_match_MHS_bibj); // same, maternal half sibs
-  DATA_MATRIX(n_comp_HS_bibj); // number of half sib comparisons
+  DATA_ARRAY(n_match_HSGGP_sibidibjmij); // half sib + GGP matches by older animal sex, birth year of oldest, death year old oldest, birth year of youngest, and whether they share mtDNA or not
+  DATA_ARRAY(n_comp_HSGGP_sibidibj); // number of half sib + GGP comparisons 
   DATA_ARRAY(n_match_MPO_bidibj); // maternal parent-offspring matches organized by birth of mother, death of mother, birth of offspring
   DATA_ARRAY(n_match_PPO_bidibj); // paternal parent-offspring matches 
   DATA_ARRAY(n_comp_MPO_bidibj); // maternal parent-offspring comparisons organized by birth of mother, death of mother, birth of offspring
@@ -119,6 +243,8 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(sd_log_eta2);  //sd of eta2 prior
   DATA_SCALAR(sd_log_eta3);  //sd of eta3 prior
   DATA_SCALAR(lambda_expect); // lambda to match during optimization
+  DATA_INTEGER(min_repro_fem); //index of Fem_fec for first value >0 (for increased efficiency in GGP calcs)
+  DATA_INTEGER(min_repro_male);
   
   PARAMETER(n0_log); //number of age 0, year 1
   PARAMETER(log_eta1);
@@ -157,6 +283,7 @@ Type objective_function<Type>::operator() ()
   array<Type> PPO_table(n_yrs,n_yrs_data,n_yrs); //dimensions are parent birth year, parent death year, offspring birth year
   matrix<Type> PHS_table(n_yrs,n_yrs); //dimensions are ind i's birth year, ind j's birth year
   matrix<Type> MHS_table(n_yrs,n_yrs); //dimensions are ind i's birth year, ind j's birth year
+  array<Type> GGP_table(2,n_yrs,n_yrs_data,n_yrs,2);  // 2 and 2 are sex of i, mtDNA=0 or 1
   vector<Type>N_a_yri(n_ages);
   vector<Type>N_a_yrj(n_ages);
   vector<Type>N_a_yri_min1(n_ages);
@@ -173,6 +300,10 @@ Type objective_function<Type>::operator() ()
       MHS_table(ibi,ibj)=get_MHS_prob(n_ages,delta_yr,N_a_yri,N_a_yrj,S_a,Fem_fec);
       for(int idi=0;idi<n_yrs_data;idi++){
         int dy = idi+n_ages;
+        GGP_table(0,ibi,idi,ibj,1)=get_f_mt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,N_a,S_a,Fem_fec);
+        GGP_table(0,ibi,idi,ibj,0)=get_f_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat);
+        GGP_table(1,ibi,idi,ibj,1)=0.0;
+        GGP_table(1,ibi,idi,ibj,0)=get_m_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat);
         MPO_table(ibi,idi,ibj)=get_MPO_prob(delta_yr,ibi,dy,Fem_fec,N_a_yri); //in this case delta_yr = age of parent
         PPO_table(ibi,idi,ibj)=get_PPO_prob(delta_yr-1,ibi-1,dy,Male_mat,N_a_yri_min1); //a year earlier since breeding occurs ~11 months before pups born
       }
@@ -183,24 +314,34 @@ Type objective_function<Type>::operator() ()
   }
 
   //likelihood
-  array<Type> LogL_table(n_yrs,n_yrs,2);
+  array<Type> LogL_table(2,n_yrs,n_yrs_data,n_yrs,2);
   Type logl = 0;
   for(int ibi=1;ibi<(n_yrs-1);ibi++){  //start at 1 since PPO,PHS need access to abundance the year before
     for(int ibj=(ibi+1);ibj<std::min(n_yrs,ibi+n_ages);ibj++){
-      LogL_table(ibi,ibj,0)=dbinom_kern_log(n_comp_HS_bibj(ibi,ibj),n_match_PHS_bibj(ibi,ibj),PHS_table(ibi,ibj));
-      LogL_table(ibi,ibj,1)=dbinom_kern_log(n_comp_HS_bibj(ibi,ibj),n_match_MHS_bibj(ibi,ibj),MHS_table(ibi,ibj)); //HSPs
-      logl += dbinom_kern_log(n_comp_HS_bibj(ibi,ibj),n_match_PHS_bibj(ibi,ibj),PHS_table(ibi,ibj)); //HSPs
-      logl += dbinom_kern_log(n_comp_HS_bibj(ibi,ibj),n_match_MHS_bibj(ibi,ibj),MHS_table(ibi,ibj)); //HSPs
       for(int idi = 0; idi<n_yrs_data; idi++){
+        for(int isi=0; isi<2;isi++){
+          LogL_table(isi,ibi,idi,ibj,0)=dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibj),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibj,0),PHS_table(ibi,ibj)+GGP_table(isi,ibi,idi,ibj,0)); //HSPs + GGPs
+          LogL_table(isi,ibi,idi,ibj,1)=dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibj),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibj,1),MHS_table(ibi,ibj)+GGP_table(isi,ibi,idi,ibj,1)); //HSPs + GGPs
+          logl += dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibj),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibj,0),PHS_table(ibi,ibj)+GGP_table(isi,ibi,idi,ibj,0)); //HSPs + GGPs
+          logl += dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibj),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibj,1),MHS_table(ibi,ibj)+GGP_table(isi,ibi,idi,ibj,1)); //HSPs + GGPs
+        } 
         logl += dbinom_kern_log(n_comp_PPO_bidibj(ibi,idi,ibj),n_match_PPO_bidibj(ibi,idi,ibj),PPO_table(ibi,idi,ibj)); //POPs
         logl += dbinom_kern_log(n_comp_MPO_bidibj(ibi,idi,ibj),n_match_MPO_bidibj(ibi,idi,ibj),MPO_table(ibi,idi,ibj)); //POPs
       }
     }
-    LogL_table(ibi,ibi,0)=dbinom_kern_log(n_comp_HS_bibj(ibi,ibi),n_match_PHS_bibj(ibi,ibi),PHS_table(ibi,ibi)); //HSPs
-    logl += dbinom_kern_log(n_comp_HS_bibj(ibi,ibi),n_match_PHS_bibj(ibi,ibi),PHS_table(ibi,ibi)); //HSPs
+    for(int isi=0; isi<2; isi++){
+      for(int idi=0;idi<n_yrs_data;idi++){
+        LogL_table(isi,ibi,idi,ibi,0)=dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibi),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibi,0),PHS_table(ibi,ibi)); //HSPs equal birth year
+        logl += dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,ibi,idi,ibi),n_match_HSGGP_sibidibjmij(isi,ibi,idi,ibi,0),PHS_table(ibi,ibi)); //HSPs equal birth year
+      }
+    }
   }
-  LogL_table(n_yrs-1,n_yrs-1,0)=dbinom_kern_log(n_comp_HS_bibj(n_yrs-1,n_yrs-1),n_match_PHS_bibj(n_yrs-1,n_yrs-1),PHS_table(n_yrs-1,n_yrs-1)); //HSPs
-  logl += dbinom_kern_log(n_comp_HS_bibj(n_yrs-1,n_yrs-1),n_match_PHS_bibj(n_yrs-1,n_yrs-1),PHS_table(n_yrs-1,n_yrs-1)); //HSPs
+  for(int isi=0; isi<2; isi++){
+    for(int idi=0;idi<n_yrs_data;idi++){
+      LogL_table(isi,n_yrs-1,idi,n_yrs-1,0)=dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,n_yrs-1,idi,n_yrs-1),n_match_HSGGP_sibidibjmij(isi,n_yrs-1,idi,n_yrs-1,0),PHS_table(n_yrs-1,n_yrs-1)); //HSPs
+      logl += dbinom_kern_log(n_comp_HSGGP_sibidibj(isi,n_yrs-1,idi,n_yrs-1),n_match_HSGGP_sibidibjmij(isi,n_yrs-1,idi,n_yrs-1,0),PHS_table(n_yrs-1,n_yrs-1)); //HSPs
+    }
+  }
   Type logl1= logl;
 
   for(int iy=0;iy<n_yrs;iy++)N(iy)=N_a.row(iy).sum();
@@ -221,6 +362,7 @@ Type objective_function<Type>::operator() ()
   REPORT(PHS_table);
   REPORT(MPO_table);
   REPORT(MHS_table);
+  REPORT(GGP_table);
   REPORT(N);
   REPORT(S_a);
   REPORT(eta1);
@@ -239,9 +381,6 @@ Type objective_function<Type>::operator() ()
   ADREPORT( eta3 )
     
   REPORT(N_a);
-  REPORT(n_comp_HS_bibj);
-  REPORT(n_match_PHS_bibj);
-  REPORT(n_match_MHS_bibj);
   REPORT(A);
   REPORT(n_comp_PPO_bidibj);
   REPORT(n_match_PPO_bidibj);

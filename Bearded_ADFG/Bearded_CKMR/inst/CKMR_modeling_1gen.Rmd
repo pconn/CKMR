@@ -11,6 +11,7 @@ link-citations: yes
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(digits = 2) #set to two decimal places
 ```
 
 
@@ -240,10 +241,6 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   #Random= c("log_eta1","log_eta2","log_eta3")
   Random=NULL
 
-  save.image("TMB_workspace_1gen.RData")
-  
-  load("TMB_workspace_1gen.RData")
-  Random=NULL
   library(TMB)
   getwd()
   TmbFile = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_1gen.cpp"
@@ -257,6 +254,7 @@ To fit this model, I programmed the log-likelihood in Template Model Builder (TM
   Obj$fn( Obj$par )
   Report = Obj$report()
 
+  init_report = Report
   
   #Minimize negative log likelihood and time it
   Start_time = Sys.time()
@@ -306,92 +304,134 @@ those that don't.  In particular, if the older animal is female, there is only a
 
 Here, the green DNA bits show inheritance of mtDNA, with green mtDNA being identical to that possessed by the grandparent.
 Importantly, if the potential grandparent is male, the chance that the GGP shares mtDNA is negligible (this would not be the case in populations with low mtDNA haplotype diversity).
-  For purposes of bearded seals, we'll start by grouping apparent half-sibling comparisons by the sex of the older individual (for same-age comparisons, the sex of an arbirtrary seal is chosen):
+  For purposes of bearded seals, we'll start by grouping apparent half-sibling comparisons by the sex of the older individual (for same-age comparisons, the sex of an arbirtrary seal is chosen), and also by birth years, and death year of the older animal.  Associated
+  matches can either share mtDNA or not (final array dimension).
 
 ```{r,GGP_comps,tidy='styler',cache=T}
-  n_comp_m_HS_bibj = n_comp_f_HS_bibj = n_match_m_PHS_bibj= n_match_m_MHS_bibj = n_match_f_PHS_bibj=  
-   n_match_f_MHS_bibj = matrix(0,n_yrs,n_yrs) # first letter denotes whether older animal male ('m') or female ('f')
-  n_comp_PPO_bidibj=n_comp_MPO_bidibj=n_match_PPO_bidibj=n_match_MPO_bidibj=array(0,dim=c(n_yrs,n_yrs_data,n_yrs))
+n_comp_HSGGP_sibidibj = array(0,dim=c(2,n_yrs,n_yrs_data,n_yrs))
+n_match_HSGGP_sibidibjmij = array(0,dim=c(2,n_yrs,n_yrs_data,n_yrs,2))
 
-  #determine birth year, death year relative to comparison, match data structures 
-  BY = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1-CKMR_certain_age$Samples$AgeCombined
-  DY = CKMR_certain_age$Samples$YEAR-min_yr+1
-  DY2 = CKMR_certain_age$Samples$YEAR-min_yr+n_ages+1 #for making comparisons with BY
-  Sex  = CKMR_certain_age$Samples$SexDArT
-  
-  #Now, each bearded seal pairwise comparison will contribute one to # of comparisons matrices; note that comparisons
-  #aren't differentiated by sex for HS, but are for PO because in the latter case we know what sex the potential parent was
-  for(iseal in 1:(n_seals-1)){
-    for(jseal in (iseal+1):n_seals){  #prevent double counting
-      if(BY[iseal]<BY[jseal]){
-        if(Sex[iseal]=="M")n_comp_m_HS_bibj[BY[iseal],BY[jseal]]=n_comp_m_HS_bibj[BY[iseal],BY[jseal]]+1
-        else n_comp_f_HS_bibj[BY[iseal],BY[jseal]]=n_comp_f_HS_bibj[BY[iseal],BY[jseal]]+1
-        if(DY2[iseal]>=(BY[jseal]-1) & Sex[iseal]=="M")
-          n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_PPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no comprison needed for potential father that die before offspring conceived
-        if(DY2[iseal]>=(BY[jseal]) & Sex[iseal]=="F")
-          n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]=n_comp_MPO_bidibj[BY[iseal],DY[iseal],BY[jseal]]+1  ###no 
-      } 
-      if(BY[iseal]>BY[jseal]){
-        if(Sex[jseal]=="M")n_comp_m_HS_bibj[BY[jseal],BY[iseal]]=n_comp_m_HS_bibj[BY[jseal],BY[iseal]]+1
-        else n_comp_f_HS_bibj[BY[jseal],BY[iseal]]=n_comp_f_HS_bibj[BY[jseal],BY[iseal]]+1
-        if(DY2[jseal]>=(BY[iseal]-1) & Sex[jseal]=="M")
-          n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_PPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no comprison needed for potential father that die before offspring conceived
-        if(DY2[jseal]>=(BY[iseal]) & Sex[jseal]=="F")
-          n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]=n_comp_MPO_bidibj[BY[jseal],DY[jseal],BY[iseal]]+1  ###no 
-      }
-      # we'll include comparisons for equal BYs for HSPs since theyr'e possible for PHSPs; we'll need to make probs
-      # 0 for MHSPs since only one pup/yr 
-      if(BY[iseal]==BY[jseal]){
-        if(Sex[iseal]=="M")n_comp_m_HS_bibj[BY[iseal],BY[jseal]]=n_comp_m_HS_bibj[BY[iseal],BY[jseal]]+1
-        else n_comp_f_HS_bibj[BY[iseal],BY[jseal]]=n_comp_f_HS_bibj[BY[iseal],BY[jseal]]+1
-      }  
-    }
+for(iseal in 1:(n_seals-1)){
+  for(jseal in (iseal+1):n_seals){  #prevent double counting
+    if(BY[iseal]<=BY[jseal])
+      n_comp_HSGGP_sibidibj[(Sex[iseal]=="M")+1,BY[iseal],DY[iseal],BY[jseal]]=
+        n_comp_HSGGP_sibidibj[(Sex[iseal]=="M")+1,BY[iseal],DY[iseal],BY[jseal]]+1
+    if(BY[iseal]>BY[jseal])n_comp_HSGGP_sibidibj[(Sex[iseal]=="M")+1,BY[jseal],DY[jseal],BY[iseal]]=
+        n_comp_HSGGP_sibidibj[(Sex[iseal]=="M")+1,BY[jseal],DY[jseal],BY[iseal]]+1
+    # we'll need to make probs 0 for MHSPs since only one pup/yr; restrictions will need to 
+    # be made on ages in TMB to prevent GGP comparisons when death of grandparent occurs in inadmissable range
   }
+}
+
+#matches
+#HSPs
+for(imatch in 1:nrow(CKMR_certain_age$matches_PHS)){
+  if(BY[CKMR_certain_age$matches_PHS[imatch,"i"]]<=BY[CKMR_certain_age$matches_PHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_PHS$i[imatch]]=="M")+1,BY[CKMR_certain_age$matches_PHS$i[imatch]],DY[CKMR_certain_age$matches_PHS$i[imatch]],BY[CKMR_certain_age$matches_PHS$j[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_PHS$i[imatch]]=="M")+1,BY[CKMR_certain_age$matches_PHS$i[imatch]],DY[CKMR_certain_age$matches_PHS$i[imatch]],BY[CKMR_certain_age$matches_PHS$j[imatch]],1]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_PHS$j[imatch]]=="M")+1,BY[CKMR_certain_age$matches_PHS$j[imatch]],DY[CKMR_certain_age$matches_PHS$j[imatch]],BY[CKMR_certain_age$matches_PHS$i[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_PHS$j[imatch]]=="M")+1,BY[CKMR_certain_age$matches_PHS$j[imatch]],DY[CKMR_certain_age$matches_PHS$j[imatch]],BY[CKMR_certain_age$matches_PHS$i[imatch]],1]+1}
+
+for(imatch in 1:nrow(CKMR_certain_age$matches_MHS)){
+  if(BY[CKMR_certain_age$matches_MHS[imatch,"i"]]<=BY[CKMR_certain_age$matches_MHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_MHS$i[imatch]]=="M")+1,BY[CKMR_certain_age$matches_MHS$i[imatch]],DY[CKMR_certain_age$matches_MHS$i[imatch]],BY[CKMR_certain_age$matches_MHS$j[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_MHS$i[imatch]]=="M")+1,BY[CKMR_certain_age$matches_MHS$i[imatch]],DY[CKMR_certain_age$matches_MHS$i[imatch]],BY[CKMR_certain_age$matches_MHS$j[imatch]],2]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_MHS$j[imatch]]=="M")+1,BY[CKMR_certain_age$matches_MHS$j[imatch]],DY[CKMR_certain_age$matches_MHS$j[imatch]],BY[CKMR_certain_age$matches_MHS$i[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[CKMR_certain_age$matches_MHS$j[imatch]]=="M")+1,BY[CKMR_certain_age$matches_MHS$j[imatch]],DY[CKMR_certain_age$matches_MHS$j[imatch]],BY[CKMR_certain_age$matches_MHS$i[imatch]],2]+1}
+
+
 ```
 
-We'll need to reformulate our .cpp TMB file to account for updated half-sib/GGP probabilities.  There are four different possibilities, associated with whether (1) the sex of the parent, and (2) whether or not the two individuals compared share mitochondrial DNA.  Let's first describe what the probability of a GGP is for these cases, before describing combined probabilities (GGP + HSP).  To do this, let $s_i$ denote sex of the older seal (with $s_i=1$ if $i$ is male), and $M_{ij}$ be a binary covariate that takes on the value 1 if indivduals $i$ and $j$ share mtDNA.
+We'll need to reformulate our .cpp TMB file to account for updated half-sib/GGP probabilities.  There are four different possibilities, associated with whether (1) the sex of the parent, and (2) whether or not the two individuals compared share mitochondrial DNA.  Let's first describe what the probability of a GGP is for these cases, before describing combined probabilities (GGP + HSP).  To do this, let $s_i$ denote sex of the older seal (with $s_i=1$ if $i$ is male), and $m_{ij}$ be a binary random variable that takes on the value 1 if indivduals $i$ and $j$ share mtDNA.
 
-**Case 1:** $ s_i = 0, M_{ij}=1 $
+**Case 1:** $s_i=0$, $m_{ij}=1$
 
-We'll denote the probability of a GGP that shares mitochondrial when the $s_i=0$ as 
-$Pr(GGP|M_i=1,s_i=0)$.  Note that in our case we assume this can *only* happen if the unobserved parent is female.  Accordingly,
-
-$$
-Pr(GGP | M_{ij}=1,s_i=0) = \sum_{t=b_i}^{\min(d_i,b_j)} \frac{f_{t-b_i}}{\sum_a  f_a N_{t,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} f_{b_j-t}}{\sum_a f_a N_{b_j,a}}
-$$
-
-Note that in this case, the parent must be female and must survive to the time of $i$'s birth.  Relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the parent's birth.  For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival, etc.
-
-**Case 2:** $ s_i = 0, M_{ij}=0 $
-
-The only way for this to happen is if the unobserved parent is male, so our answer will be similar but will involve male maturity-at-age indexed to the year before $j$'s birth:
+We'll denote the probability of a GGP sharing mtDNA when the potential grandparent is female as
+$Pr(GGP,m_{ij}=1|s_i=0,d_i,b_i,b_j)$.  Note that this expression depends on the time of death of the potential grandparent
+(for instance, if it dies before it was old enough to have potentially reproduced, it is clearly not a grandparent).
+Note also that we are assuming (by virtue of high mtDNA haplotype diversity) that a grandparent and grandchild can only share mtDNA if the unobserved parent is female .  Accordingly,
 
 $$
-Pr(GGP | M_{ij}=0,s_i=0) = \sum_{t=b_i}^{\min(d_i,b_j-1)} \frac{f_{t-b_i}}{\sum_a  f_a N_{t,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+Pr(GGP,m_{ij}=1|s_i=0,d_i,b_i,b_j) = \sum_{t=b_i}^{\min(d_i,b_j)} \frac{f_{t-b_i} N_{t,0}}{\sum_a  f_a N_{t,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} 2 f_{b_j-t}}{\sum_a f_a N_{b_j,a}}
 $$
 
-**Case 3:** $s_i = 1, M_{ij}=1 $
+Here, relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the mother's birth.  The $N_{t,0}$ in the numerator arises because the potential parent can be any of the females born in the 
+given year $t$. For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival among sexes, etc.
 
-Now we're on to the males.  This one is easy; by assumption we assume that Pr(GGP | $M_{ij}=1,s_i=1)=0$ for reasons stated previously.
+**Case 2:** $s_i = 0, m_{ij}=0$
 
-**Case 4:** $s_i = 1, M_{ij}=0 $
+The only way for a grandmother and grandchild not to share mtDNA is if the unobserved parent is male, so our answer will be similar but will involve male maturity-at-age indexed to the year before $j$'s birth:
+
+$$
+Pr(GGP, m_{ij}=0|s_i=0,d_i,b_i,b_j) = \sum_{t=b_i}^{\min(d_i,b_j-1)} \frac{f_{t-b_i}N_{t,0}}{\sum_a  f_a N_{t,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+$$
+
+**Case 3:** $s_i = 1, M_{ij}=1$
+
+Now we're on to the males.  This one is easy; by assumption we assume that $Pr(GGP,m_{ij}=1|s_i=1,d_i,b_i,b_j)=0$ for reasons stated previously.
+
+**Case 4:** $s_i = 1, M_{ij}=0$
 
 This case can happen whether the offspring of $i$ is male or female, so we have to account for both.  Fortunately, it is very similar to what we have written already, though it involves male maturity in the year previous to the birth of the prospective parent:
 
 $$
 \begin{aligned}
-Pr(GGP | M_{ij}=0,s_i=1) &=  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}}{\sum_a  m_a N_{t-1,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} f_{b_j-t}}{\sum_a f_a N_{b_j,a}} \\
+Pr(GGP, m_{ij}=0|s_i=1,d_i,b_i,b_j) &=  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1} N_{t,0}}{\sum_a  m_a N_{t-1,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} 2f_{b_j-t}}{\sum_a f_a N_{b_j,a}} \\
   &+ 
-  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}}{\sum_a  m_a N_{t-1,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}N_{t,0}}{\sum_a  m_a N_{t-1,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
 \end{aligned}
 $$
 
-  
-  
+After formalizing these probabilities in a new .cpp file, let's recompile code
+with updated data structures and see what we get.
+
+```{r,run_GGP,tidy='styler',cache=T,include=FALSE}
+Data_old = Data
+Data =   Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,
+            "Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A,"n_match_HSGGP_sibidibjmij"=n_match_HSGGP_sibidibjmij,
+            "n_comp_HSGGP_sibidibj"=n_comp_HSGGP_sibidibj,
+            "n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,
+            "n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,
+            mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),
+            sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)),
+            lambda_expect=1.0,min_repro_fem =3,min_repro_male=5)  #SD log multipliers set to achieve approx CV of 0.2 on real scale
+
+save.image("TMB_workspace_GGP.RData")
+
+
+load("TMB_workspace_GGP.RData")
+library(TMB)
+TmbFile_GGP = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP.cpp"
+compile(TmbFile_GGP )
+TmbExec_GGP="c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP"
+dyn.load(dynlib(TmbExec_GGP))
+
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP")
+
+Obj$fn( Obj$par )
+Report = Obj$report()
+
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report=Obj$report()
+SD_report=sdreport(Obj)
+N_est_TMB = SD_report$value[which(names(SD_report$value)=="N")]
+
+```
+The time to fit the combined GGP-HSP model increased quite a bit (up to `r End_time-Start_time`), which isn't surprising since likelihood calculations require an additional type of kin and are disaggregated (now requiring calculations by the sex and year of death of the potential parent).  The
+abundance estimate has also gone up about, to `r Report$N[1]`.  The expected number of grandparent-grandchild given our data
+and model fit is `r sum(Data$n_comp_HSGGP_sibidibj*Report$GGP_table[,,,,1]+Data$n_comp_HSGGP_sibidibj*Report$GGP_table[,,,,2])`.
   
   
 ### Investigating alternative thresholds
