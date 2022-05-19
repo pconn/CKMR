@@ -1,7 +1,7 @@
 ---
 title: "Bearded seal CKMR modeling"
 author: "Paul Conn"
-date: "5/6/2022"
+date: "5/16/2022"
 output:
   pdf_document: default
   html_document: default
@@ -430,14 +430,293 @@ N_est_TMB = SD_report$value[which(names(SD_report$value)=="N")]
 
 ```
 The time to fit the combined GGP-HSP model increased quite a bit (up to `r End_time-Start_time`), which isn't surprising since likelihood calculations require an additional type of kin and are disaggregated (now requiring calculations by the sex and year of death of the potential parent).  The
-abundance estimate has also gone up about, to `r Report$N[1]`.  The expected number of grandparent-grandchild given our data
+abundance estimate has also gone up to `r Report$N[1]`.  The expected number of grandparent-grandchild given our data
 and model fit is `r sum(Data$n_comp_HSGGP_sibidibj*Report$GGP_table[,,,,1]+Data$n_comp_HSGGP_sibidibj*Report$GGP_table[,,,,2])`.
   
+Let's take a look at the relative probabilities of individual seals being HSPs vs GGPs.  
+
+```{r GGPvsHSP,tidy='styler',cache=T}
+  HSPs = which(Data$n_match_HSGGP_sibidibjmij==1,arr.ind=TRUE) 
+  HSPs = data.frame(HSPs)
+  colnames(HSPs) = c("Older_sex","birth_i","death_i","birth_j","mito")
+  HSPs$Rel_prob_HSP = HSPs$prob_GGP = HSPs$prob_HSP = 0
+  for(i in 1:nrow(HSPs)){
+    GGP_prob = Report$GGP_table[HSPs[i,1],HSPs[i,2],HSPs[i,3],HSPs[i,4],HSPs[i,5]]
+    HSPs$prob_GGP[i] = GGP_prob
+    if(HSPs$mito[i]==1){   #use PHSP table
+      HSPs$Rel_prob_HSP[i] = Report$PHS_table[HSPs[i,2],HSPs[i,4]]/(Report$PHS_table[HSPs[i,2],HSPs[i,4]]+GGP_prob)
+      HSPs$prob_HSP[i] = Report$PHS_table[HSPs[i,2],HSPs[i,4]]
+    }
+    else{ 
+      HSPs$prob_HSP[i] = Report$MHS_table[HSPs[i,2],HSPs[i,4]]
+      HSPs$Rel_prob_HSP[i] = Report$MHS_table[HSPs[i,2],HSPs[i,4]]/(Report$MHS_table[HSPs[i,2],HSPs[i,4]]+GGP_prob)
+    }
+  }
+  print(HSPs)
   
-### Investigating alternative thresholds
+```  
+  
+It looks like there are `r sum(HSPs$Rel_prob_HSP<1)` seals that have potential to be GGPs, though the relative probabilities
+still favor these being HSPs (the first row has the highest probability of being a GGP, at `r 1-HSPs[1,"Rel_prob_HSP"]`).
+  
+### Investigating alternative PLOD thresholds
+
+So far, we have been assuming that we have been able to fully discriminate HSP/GGP pairs from more distant
+kin pairs (e.g., half-aunt-niece, etc.).  In truth, it is difficult to discriminate between the two at lower PLOD scores, and it is often worth imposing a lower threshold for PLOD scores to eliminate possible lower order kin.  In this case, we can try to account for the HSP/GGPs that are under our assigned lower threshold by doing some creative modeling.  The following is an attempt to show our conundrum graphically; here, the red line depicts a hypothetical expected frequency of PLOD scores among unrelated pairs (with a bump centered at zero), and the blue line depicts the same for HSGGPs (here centered at 100).  The issue is at scores of e.g. 50-70.  These matches could conceivably be of either type.
+
+```{r PLODogram}
+  X = c(-50:150)
+  Y_no = 500*dnorm(X,0,20)
+  Y_sib = 100*dnorm(X,100,20)
+  Plot_df = data.frame("PLOD_value"=rep(X,2),"Exp_count"=c(Y_no,Y_sib),Type=c(rep("Distant",length(X)),rep("HSGGP",length(X))))
+  library(ggplot2)
+  ggplot(Plot_df)+geom_line(aes(x=PLOD_value,y=Exp_count,group=Type,color=Type))
+```
+
+One thing we might do then is to impose a threshold (let's say PLOD_value=70) that essentially makes the probability of 
+a non-HSGGP negligible.  If we knew the parameters of the blue curve and are willing to assume normality, we could then calculate the probability of
+detecting and including an HSGGP in our modeling procedure as e.g.
+
+$$
+  d=\int_{x=70}^{\infty} f(x;\mu,\sigma^2) dx
+$$
+where $f(x;\mu,\sigma^2)$ is a Gaussian probability density function with mean $\mu$ and variance $\sigma^2$. To include
+this quantity in estimation, we can simply replace $p_{ij2}$ with $p_{ij2}d$ everywhere it occurs in the CKMR pseudo-likelihood.
+
+Let's take a look at some possible PLOD thresholds with our bearded seal dataset.  We'll start by plotting a histogram of potential HSP scores
+
+```{r,plod_hists,tidy='styler',cache=T}
+load('c:/users/paul.conn/git/ckmr/bearded_adfg/HSP_plod_info.RData')
+
+hist(HSP_PLOD_info$HSP_PLODs,breaks=20,xlab="PLOD score",main="Potential HSP plod scores")
+abline(v=HSP_PLOD_info$HSPmean,col="red")
+```
+
+Here, the red line shows the theoretical place (based on Hardy-Weinberg) where the peak of PLOD scores should be for HSPs (and GGPs!); the peak closer
+to zero is for related kin, but lesser so than HSPs (e.g., half-aunt/niece, etc.).  In order to set PLOD thresholds we need to know something about the variance of the HSP peak.  Because the left hand side is potentially contaminated by weak kin pairs, the only ``safe" thing to do is to use the right hand side of the distribution
+to estimate variance.  Let's fit a half-normal distribution to these scores using maximum likelihood.  We'll use
+this fitted model to predict the probability of a HSP occurring with PLOD scores below certain thresholds (specifically, 30, 40, and 50).
+
+```{r,plod_est,tidy='styler',cache=T}
+
+Upper_sample = HSP_PLOD_info$HSP_PLODs[which(HSP_PLOD_info$HSP_PLODs>HSP_PLOD_info$HSPmean)]
+HalfN_sample = Upper_sample-HSP_PLOD_info$HSPmean
+
+ML_fun <- function(sd_log,Data){
+  sd = exp(sd_log)
+  -sum(2*dnorm(Data,0,sd,log=T))
+}
+
+Estim = nlminb(log(10),ML_fun,Data=HalfN_sample)
+sd_est = exp(Estim$par)
+
+pnorm(30,HSP_PLOD_info$HSPmean,sd_est)
+
+pnorm(40,HSP_PLOD_info$HSPmean,sd_est)
+
+pnorm(50,HSP_PLOD_info$HSPmean,sd_est)
+
+```
+
+This little experiment is something that should be conducted in all CKMR experiments using half-siblings.  However, it also demonstrates the very real complications that can happen with small datasets! In particular, there is a very subjective "gap" around 25 that is tempting to take as a cutoff; however, our analysis suggests that the
+PLOD cutoff could potentially be much higher (e.g., 50).  There are some other details that we can look at to 
+justify a decision.  In particular, half-aunts/nieces, etc. will typically have larger age differences with a mode near one generation time.  In the bearded seal case, potential HSPs with PLOD scores above 25 tend to have lower age differences than matches with lower PLOD scores; however, this isn't definitive.  Our view is that we were probably unlucky (in the sense that we had low sample size), and the observed variance to the right hand side of the red line is lower than we would normally observe in a sample of this size.  However, it's hard to say for sure, and we'll look at analyses with each of these possible HSP plod cutoffs (30, 40, or 50).  
+
+Let's run a series of models accounting for different thresholds and false negative HSP/GGP probabilities (I'm hiding code because I have to recalculate the n_match arrays for HSGGPs.)
+
+```{r,run_plod,tidy='styler',cache=T,include=FALSE}
+library(TMB)
+TmbFile_plod = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP_plod.cpp"
+compile(TmbFile_plod )
+TmbExec_plod="c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP_plod"
+dyn.load(dynlib(TmbExec_plod))
+
+# PLOD threshold = 30
+p_plod = 1-pnorm(30,HSP_PLOD_info$HSPmean,sd_est)
+n_match_HSGGP_all = Data$n_match_HSGGP_sibidibjmij
+matches_PHS = CKMR_certain_age$matches_PHS[which(CKMR_certain_age$matches_PHS$PLOD>30),]
+matches_MHS = CKMR_certain_age$matches_MHS[which(CKMR_certain_age$matches_MHS$PLOD>30),]
+
+n_match_HSGGP_sibidibjmij=0*n_match_HSGGP_sibidibjmij
+
+for(imatch in 1:nrow(matches_PHS)){
+  if(BY[matches_PHS[imatch,"i"]]<=BY[matches_PHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]+1}
+
+for(imatch in 1:nrow(matches_MHS)){
+  if(BY[matches_MHS[imatch,"i"]]<=BY[matches_MHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]+1}
+
+
+Data =   Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,
+            "Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A,"n_match_HSGGP_sibidibjmij"=n_match_HSGGP_sibidibjmij,
+            "n_comp_HSGGP_sibidibj"=n_comp_HSGGP_sibidibj,
+            "n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,
+            "n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,
+            mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),
+            sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)),
+            lambda_expect=1.0,min_repro_fem =3,min_repro_male=5,p_plod=p_plod)  #SD log multipliers set to achieve approx CV of 0.2 on real scale
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_30=Obj$report()
+SD_report_30=sdreport(Obj)
+N_est_TMB_30 = SD_report_30$value[which(names(SD_report$value)=="N")]
+
+
+# PLOD threshold = 40
+p_plod = 1-pnorm(40,HSP_PLOD_info$HSPmean,sd_est)
+n_match_HSGGP_all = Data$n_match_HSGGP_sibidibjmij
+matches_PHS = CKMR_certain_age$matches_PHS[which(CKMR_certain_age$matches_PHS$PLOD>40),]
+matches_MHS = CKMR_certain_age$matches_MHS[which(CKMR_certain_age$matches_MHS$PLOD>40),]
+
+n_match_HSGGP_sibidibjmij=0*n_match_HSGGP_sibidibjmij
+
+for(imatch in 1:nrow(matches_PHS)){
+  if(BY[matches_PHS[imatch,"i"]]<=BY[matches_PHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]+1}
+
+for(imatch in 1:nrow(matches_MHS)){
+  if(BY[matches_MHS[imatch,"i"]]<=BY[matches_MHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]+1}
+
+
+Data =   Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,
+            "Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A,"n_match_HSGGP_sibidibjmij"=n_match_HSGGP_sibidibjmij,
+            "n_comp_HSGGP_sibidibj"=n_comp_HSGGP_sibidibj,
+            "n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,
+            "n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,
+            mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),
+            sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)),
+            lambda_expect=1.0,min_repro_fem =3,min_repro_male=5,p_plod=p_plod)  #SD log multipliers set to achieve approx CV of 0.2 on real scale
+Data40 = Data
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_40=Obj$report()
+SD_report_40=sdreport(Obj)
+N_est_TMB_40 = SD_report_40$value[which(names(SD_report$value)=="N")]
+
+
+# PLOD threshold = 50
+p_plod = 1-pnorm(50,HSP_PLOD_info$HSPmean,sd_est)
+n_match_HSGGP_all = Data$n_match_HSGGP_sibidibjmij
+matches_PHS = CKMR_certain_age$matches_PHS[which(CKMR_certain_age$matches_PHS$PLOD>50),]
+matches_MHS = CKMR_certain_age$matches_MHS[which(CKMR_certain_age$matches_MHS$PLOD>50),]
+
+n_match_HSGGP_sibidibjmij=0*n_match_HSGGP_sibidibjmij
+
+for(imatch in 1:nrow(matches_PHS)){
+  if(BY[matches_PHS[imatch,"i"]]<=BY[matches_PHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$i[imatch]]=="M")+1,BY[matches_PHS$i[imatch]],DY[matches_PHS$i[imatch]],BY[matches_PHS$j[imatch]],1]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_PHS$j[imatch]]=="M")+1,BY[matches_PHS$j[imatch]],DY[matches_PHS$j[imatch]],BY[matches_PHS$i[imatch]],1]+1}
+
+for(imatch in 1:nrow(matches_MHS)){
+  if(BY[matches_MHS[imatch,"i"]]<=BY[matches_MHS[imatch,"j"]])
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$i[imatch]]=="M")+1,BY[matches_MHS$i[imatch]],DY[matches_MHS$i[imatch]],BY[matches_MHS$j[imatch]],2]+1
+  else
+    n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]=
+      n_match_HSGGP_sibidibjmij[(Sex[matches_MHS$j[imatch]]=="M")+1,BY[matches_MHS$j[imatch]],DY[matches_MHS$j[imatch]],BY[matches_MHS$i[imatch]],2]+1}
+
+
+Data =   Data=list("n_yrs"=n_yrs,"n_yrs_data"=n_yrs_data,"n_seals"=n_seals,"n_ages"=n_ages,
+            "Male_mat"=Male_mat,"Fem_fec"=Fem_fec,"A"=A,"n_match_HSGGP_sibidibjmij"=n_match_HSGGP_sibidibjmij,
+            "n_comp_HSGGP_sibidibj"=n_comp_HSGGP_sibidibj,
+            "n_match_MPO_bidibj"=n_match_MPO_bidibj,"n_comp_MPO_bidibj"=n_comp_MPO_bidibj,
+            "n_match_PPO_bidibj"=n_match_PPO_bidibj,"n_comp_PPO_bidibj"=n_comp_PPO_bidibj,
+            mu_log_eta1=log(0.055),mu_log_eta2=log(2.8),mu_log_eta3=log(0.076),
+            sd_log_eta1=0.07*abs(log(0.055)),sd_log_eta2=0.2*abs(log(2.8)),sd_log_eta3=abs(0.08*log(0.076)),
+            lambda_expect=1.0,min_repro_fem =3,min_repro_male=5,p_plod=p_plod)  #SD log multipliers set to achieve approx CV of 0.2 on real scale
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_50=Obj$report()
+SD_report_50=sdreport(Obj)
+N_est_TMB_50 = SD_report_50$value[which(names(SD_report$value)=="N")]
+
+```
+
+Looking at estimates from different sensitivity runs, we see that abundance estimates are fairly sensitive to the PLOD cutoff value,
+with a 30 cutoff resulting in $\hat{N}=$ `r N_est_TMB_30[1]`; a 40 cutoff resulting in $\hat{N}=$ `r N_est_TMB_40[1]`, and a 50 cutoff resulting in $\hat{N}=$ `r N_est_TMB_50[1]`.  As more harvest data are collected, presumably resulting in an increased number of kin pairs, we hope that
+this source of structural uncertainty will diminish.  However, right now, it is quite real.  
+
+### Alternative trend scenarios
+
+Another possible source of structural uncertainty is with our assumption that abundance is constant over time. Let's look and see what happens
+when we investigate some alternative trend scenarios, including (1) a constant 2\% rate of increase over time, and (2) a constant 2\% rate of decrease over time.  In practice, it would be impossible to sustain a constant increase or decrease over a long period, but it will be instructive to see what alternative trends do to the overall scale of our estimate.  Let's do this with the PLOD=40 scenario...
+
+```{r,run_trend,tidy='styler',cache=T,include=FALSE}
+Data=Data40
+Data$lambda_expect = 1.02
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_lambda_inc=Obj$report()
+SD_report_lambda_inc=sdreport(Obj)
+N_est_TMB_lambda_inc = SD_report_lambda_inc$value[which(names(SD_report_lambda_inc$value)=="N")]
+SD_N_lambda_inc = SD_report_lambda_inc$sd[which(names(SD_report_lambda_inc$value)=="N")]
+
+Data$lambda_expect = 0.98
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_lambda_dec=Obj$report()
+SD_report_lambda_dec=sdreport(Obj)
+N_est_TMB_lambda_dec = SD_report_lambda_dec$value[which(names(SD_report_lambda_dec$value)=="N")]
+SD_N_lambda_dec = SD_report_lambda_dec$sd[which(names(SD_report_lambda_dec$value)=="N")]
+
+plot(x=c(1980:2020),y=N_est_TMB_40[22:62],ylim=c(0,400000),xlab="Year",ylab="Abundance estimate")
+lines(x=c(1980:2020),y=N_est_TMB_lambda_dec[22:62])
+lines(x=c(1980:2020),y=N_est_TMB_lambda_inc[22:62])
+```
+This exercise illustrates several phenomenon.  First, abundance estimates intersect in 2003, but are quite different by the end of the time series.  This is one phenomenon with CKMR estimation: precision and accuracy of estimates tend to be better towards to beginning of time series (in the "meat" of observed birth dates).  Second, the log pseudo-likelihood values are fairly similar for the three trend ($\lambda$) values, with $L=$ `r Report_lambda_dec$logl`, `r Report_40$logl`, and `r Report_lambda_inc$logl` for decreasing, stable, and increasing population models, respectively.  Interestingly, there appears to be 
+slight evidence that the population is either increasing or decreasing, rather than being stable, but our experience is that it can actually be quite hard to estimate population trend from close kin data - we would certainly want a lot more kin pairs for reliable trend estimation.
 
 
 
-
-
-
+## References

@@ -245,6 +245,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(lambda_expect); // lambda to match during optimization
   DATA_INTEGER(min_repro_fem); //index of Fem_fec for first value >0 (for increased efficiency in GGP calcs)
   DATA_INTEGER(min_repro_male);
+  DATA_SCALAR(p_plod);
   
   PARAMETER(n0_log); //number of age 0, year 1
   PARAMETER(log_eta1);
@@ -296,21 +297,21 @@ Type objective_function<Type>::operator() ()
       N_a_yri_min1 = N_a.row(ibi-1);
       N_a_yrj=N_a.row(ibj);
       N_a_yrj_min1 = N_a.row(ibj-1);
-      PHS_table(ibi,ibj)=get_PHS_prob(n_ages,delta_yr,N_a_yri_min1,N_a_yrj_min1,S_a,Male_mat);
-      MHS_table(ibi,ibj)=get_MHS_prob(n_ages,delta_yr,N_a_yri,N_a_yrj,S_a,Fem_fec);
+      PHS_table(ibi,ibj)=get_PHS_prob(n_ages,delta_yr,N_a_yri_min1,N_a_yrj_min1,S_a,Male_mat)*p_plod;
+      MHS_table(ibi,ibj)=get_MHS_prob(n_ages,delta_yr,N_a_yri,N_a_yrj,S_a,Fem_fec)*p_plod;
       for(int idi=0;idi<n_yrs_data;idi++){
         int dy = idi+n_ages;
-        GGP_table(0,ibi,idi,ibj,1)=get_f_mt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,N_a,S_a,Fem_fec);
-        GGP_table(0,ibi,idi,ibj,0)=get_f_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat);
+        GGP_table(0,ibi,idi,ibj,1)=get_f_mt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,N_a,S_a,Fem_fec)*p_plod;
+        GGP_table(0,ibi,idi,ibj,0)=get_f_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat)*p_plod;
         GGP_table(1,ibi,idi,ibj,1)=0.0;
-        GGP_table(1,ibi,idi,ibj,0)=get_m_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat);
+        GGP_table(1,ibi,idi,ibj,0)=get_m_nomt_GGP_prob(n_ages,ibi,ibj,dy,min_repro_fem,min_repro_male,N_a,S_a,Fem_fec,Male_mat)*p_plod;
         MPO_table(ibi,idi,ibj)=get_MPO_prob(delta_yr,ibi,dy,Fem_fec,N_a_yri); //in this case delta_yr = age of parent
         PPO_table(ibi,idi,ibj)=get_PPO_prob(delta_yr-1,ibi-1,dy,Male_mat,N_a_yri_min1); //a year earlier since breeding occurs ~11 months before pups born
       }
     }
     int delta_yr = 0;
     vector<Type>N_a_yri_min1=N_a.row(ibi-1);
-    PHS_table(ibi,ibi)=get_PHS_prob(n_ages,delta_yr,N_a_yri_min1,N_a_yri_min1,S_a,Male_mat);
+    PHS_table(ibi,ibi)=get_PHS_prob(n_ages,delta_yr,N_a_yri_min1,N_a_yri_min1,S_a,Male_mat)*p_plod;
   }
 
   //likelihood
