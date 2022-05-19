@@ -355,19 +355,19 @@ Note also that we are assuming (by virtue of high mtDNA haplotype diversity) tha
 
 $$
 Pr(GGP,m_{ij}=1|s_i=0,d_i,b_i,b_j) = \sum_{t=b_i}^{\min(d_i,b_j)} \frac{f_{t-b_i} N_{t,0}}{\sum_a  f_a N_{t,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} 2 f_{b_j-t}}{\sum_a f_a N_{b_j,a}}
+  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} 2 f_{b_j-t}}{\sum_a f_a N_{b_j,a}} = \sum_{t=b_i}^{\min(d_i,b_j)} \frac{f_{t-b_i} N_{b_j,b_j-t}}{\sum_a  f_a N_{t,a}}
+  \frac{  2 f_{b_j-t}}{\sum_a f_a N_{b_j,a}}
 $$
 
-Here, relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the mother's birth.  The $N_{t,0}$ in the numerator arises because the potential parent can be any of the females born in the 
-given year $t$. For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival among sexes, etc.
+Here, relative reproductive success is conditional on the unknown age of the parent, so we must sum over the possible years ($t$) of the mother's birth.  The $N_{b_j,b_j-t}$ in the numerator arises because the potential parent can be any of the females born in year $t$ that survive to the year of $j$'s birth. For seals, many of the $f_a$ values are zero for low ages, so practically speaking we must have a sufficient birth gap (and late enough time of death for the potential grandparent) to enable $Pr(GGP) > 0$.  As in previous calculations, this formulation requires a number of things to hold like equal male:female sex ratios, equal survival among sexes, etc.
 
 **Case 2:** $s_i = 0, m_{ij}=0$
 
 The only way for a grandmother and grandchild not to share mtDNA is if the unobserved parent is male, so our answer will be similar but will involve male maturity-at-age indexed to the year before $j$'s birth:
 
 $$
-Pr(GGP, m_{ij}=0|s_i=0,d_i,b_i,b_j) = \sum_{t=b_i}^{\min(d_i,b_j-1)} \frac{f_{t-b_i}N_{t,0}}{\sum_a  f_a N_{t,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+Pr(GGP, m_{ij}=0|s_i=0,d_i,b_i,b_j) = \sum_{t=b_i}^{\min(d_i,b_j-1)} \frac{f_{t-b_i}}{\sum_a  f_a N_{t,a}}
+  \frac{ N_{b_j-1,b_j-t-1} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
 $$
 
 **Case 3:** $s_i = 1, M_{ij}=1$
@@ -380,11 +380,11 @@ This case can happen whether the offspring of $i$ is male or female, so we have 
 
 $$
 \begin{aligned}
-Pr(GGP, m_{ij}=0|s_i=1,d_i,b_i,b_j) &=  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1} N_{t,0}}{\sum_a  m_a N_{t-1,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-1} \phi_{k-t} \} 2f_{b_j-t}}{\sum_a f_a N_{b_j,a}} \\
+Pr(GGP, m_{ij}=0|s_i=1,d_i,b_i,b_j) &=  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1} }{\sum_a  m_a N_{t-1,a}}
+  \frac{ N_{b_j,b_j-t} 2f_{b_j-t}}{\sum_a f_a N_{b_j,a}} \\
   &+ 
-  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}N_{t,0}}{\sum_a  m_a N_{t-1,a}}
-  \frac{ \{ \prod_{k=t}^{b_i-2} \phi_{k-t} \} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
+  \sum_{t=b_i+1}^{\min(d_i,b_j)} \frac{m_{t-b_i-1}}{\sum_a  m_a N_{t-1,a}}
+  \frac{ N_{b_j-1,b_j-t-1} 2m_{b_j-t-1}}{\sum_a m_a N_{b_j-1,a}}
 \end{aligned}
 $$
 
@@ -575,6 +575,7 @@ End_time = Sys.time()
 Report_30=Obj$report()
 SD_report_30=sdreport(Obj)
 N_est_TMB_30 = SD_report_30$value[which(names(SD_report$value)=="N")]
+SD_N_30 = SD_report_30$sd[which(names(SD_report_30$value)=="N")]
 
 
 # PLOD threshold = 40
@@ -621,7 +622,9 @@ End_time = Sys.time()
 
 Report_40=Obj$report()
 SD_report_40=sdreport(Obj)
-N_est_TMB_40 = SD_report_40$value[which(names(SD_report$value)=="N")]
+N_est_TMB_40 = SD_report_40$value[which(names(SD_report_40$value)=="N")]
+SD_N_40 = SD_report_40$sd[which(names(SD_report_40$value)=="N")]
+
 
 
 # PLOD threshold = 50
@@ -667,7 +670,8 @@ End_time = Sys.time()
 
 Report_50=Obj$report()
 SD_report_50=sdreport(Obj)
-N_est_TMB_50 = SD_report_50$value[which(names(SD_report$value)=="N")]
+N_est_TMB_50 = SD_report_50$value[which(names(SD_report_50$value)=="N")]
+SD_N_50 = SD_report_50$sd[which(names(SD_report_50$value)=="N")]
 
 ```
 
@@ -717,6 +721,70 @@ lines(x=c(1980:2020),y=N_est_TMB_lambda_inc[22:62])
 This exercise illustrates several phenomenon.  First, abundance estimates intersect in 2003, but are quite different by the end of the time series.  This is one phenomenon with CKMR estimation: precision and accuracy of estimates tend to be better towards to beginning of time series (in the "meat" of observed birth dates).  Second, the log pseudo-likelihood values are fairly similar for the three trend ($\lambda$) values, with $L=$ `r Report_lambda_dec$logl`, `r Report_40$logl`, and `r Report_lambda_inc$logl` for decreasing, stable, and increasing population models, respectively.  Interestingly, there appears to be 
 slight evidence that the population is either increasing or decreasing, rather than being stable, but our experience is that it can actually be quite hard to estimate population trend from close kin data - we would certainly want a lot more kin pairs for reliable trend estimation.
 
+### Male heterogeneity
+
+Looking at our data, thre are a total of 17 HSP/GGPs that don't share mtDNA, and 8 that do share mtDNA.  If we look at these records, it looks like there are 4 that have a chance of being GGPs, but in each case they are more likely to be HSPs.  If we assume that they are all HSPs, and also assume that we are equally likely to detect maternal and paternal HSPs, the chance of observing so few maternal HSPs is `r pbinom(8,25,0.5)`.  This could have happened by random chance, but it also may have happened because of heterogeneity in male reproductive success (e.g., if older or higher quality males are able to breed with more females than younger or lower quality males).  Bearded seals are known
+to maintain underwater territories during breeding season, and it may be the case that there may be some competition for mates.  
+
+In order to account for this possibility, we conducted a sensitivity scenario where we assumed the number of male 
+breeders is an unknown fraction ($\pi$) of the total number of reproductively mature males.  Specifically, we set $N_{t,a}^M = 0.5 N_{t,a} \pi$ every where that male abundance appears in previous calculations. 
+
+
+```{r,male_het,tidy='styler',cache=T,include=FALSE}
+Data=Data40
+Data$lambda_expect = 1.0
+Params$male_scale_logit = 2.0 
+
+TmbFile_het = "c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP_plod_het.cpp"
+compile(TmbFile_het )
+TmbExec_het="c:/users/paul.conn/git/CKMR/bearded_ADFG/bearded_CKMR/src/certain_ages_GGP_plod_het"
+dyn.load(dynlib(TmbExec_het))
+
+
+Obj <- MakeADFun(data=Data, parameters=Params, random=Random, map=Map, hessian=FALSE, DLL="certain_ages_GGP_plod_het")
+
+#Minimize negative log likelihood and time it
+Start_time = Sys.time()
+Opt = nlminb(start=Params, objective=Obj$fn, gradient=Obj$gr)
+End_time = Sys.time()
+
+Report_het=Obj$report()
+SD_report_het=sdreport(Obj)
+N_est_TMB_het = SD_report_het$value[which(names(SD_report_het$value)=="N")]
+SD_N_het = SD_report_het$sd[which(names(SD_report_het$value)=="N")]
+
+
+```
+
+After running this model, we have $\hat{\pi}=$ `r plogis(Report_het$male_scale_logit)`, suggesting that only a relatively small fraction of 
+reproductively mature males are successfully producing offspring each year. As expected, this leads to an increase in estimated abundance, which is now at $\hat{N}=$ `r N_est_TMB_het[1]`.
+
+
+Let's take a look at a summary of estimated abundance from this combination of sensitivity runs.  For the increasing and decreasing population
+scenarios, we'll use average abundance from 1990-2020.
+
+```{r,N_table,tidy='styler',cache=T}
+N_df = data.frame(matrix(0,6,5))
+colnames(N_df) = c("lambda","PLOD_cutoff","male_het","N_hat","CV")
+N_df$lambda = c(1,1,1,1,1.02,0.98)
+N_df$PLOD_cutoff = c(40,40,50,30,40,40)
+N_df$male_het = c("no","yes","no","no","no","no")
+N_df$N_hat = c(Report_40$N[1],Report_het$N[1],Report_50$N[1],Report_30$N[1],mean(Report_lambda_inc$N[32:62]),mean(Report_lambda_dec$N[32:62]))
+N_df$CV = c(SD_N_40[1]/Report_40$N[1],SD_N_het[1]/Report_het$N[1],SD_N_50[1]/Report_50$N[1],SD_N_30[1]/Report_30$N[1],
+            mean(SD_N_lambda_inc[32:62]/Report_lambda_inc$N[32:62]),mean(SD_N_lambda_dec[32:62]/Report_lambda_dec$N[32:62]))
+print(N_df)
+```
+
+### Aging error
+
+We did not elect tackle aging error, instead electing to assume that ages were known with certainty.  Including uncertainty in ages is 
+certainly possible in CKMR estimation [@BravingtonEtAl2016], and would serve to increase uncertainty in resulting estimates.  However, it is 
+difficult to summarize uncertainty in ages, partly because of the way teeth were analyzed.  The ages we used were primarily from tooth cementum annuli, and most of these were read by a single reader who assigned a ``most likely" age, as well as a range of ages that were plausible.  However, these ranges were not always accurate, as we had several kin pairs that indicated aging error magnitudes greater than assigned by the reader.  Ideally, aging error could be estimated using a separate experiment where multiple tag readers assess the same tooth [@Richards1992], and then incorporated directly into CKMR estimation.
+
+### Comparison with aerial survey estimates
+
+NOAA's Alaska Fisheries Science Center, together with Russian partners, conducted spring aerial surveys over the Bering Sea in 2012 and 2013, and over the Chukchi Sea in 2016.  Data from these surveys have been analyzed using spatio-temporal statistical models, which produced 
+abundance estimates.  Although as-yet unpublished, bearded seal estimates were 147,000 for the Chukchi Sea; 185,000 for the Russian Bering in 2012; 144,000 for the Russian Bering in 2013; 271,000 for the U.S. Bering in 2012, and 251,000 for the U.S. Bering in 2013.  The Chukchi Sea surveys were conducted into late May, so it may not be quite as simple as adding the Chukchi and Bering estimates together (i.e., Chukchi Sea estimates likely includes seals that wintered in the Bering Sea and migrated northward while surveys were being conducted); however, a combined aerial survey estimate around 500,000 seems reasonable.  This is considerably higher than we estimated with CKMR, although the model with male heterogeneity in reproductive success comes close.  However, we are in some sense only estimating the population of seals that are exposed to Alaska Native subsistence hunters [@ConnEtAl2020], so there is good reason to suspect that the population we are estimating with CKMR is somewhat smaller than the entire Beringia DPS.  However, it may be the most relevant population estimate for population management purposes.  
 
 
 ## References
